@@ -96,7 +96,18 @@ function filterByCategory(catId, btn) {
 }
 
 // وظيفة مؤقتة للسلة (سنطورها في صفحة السلة)
+
 window.addToCart = (productId) => {
-    window.showAlert('تم إضافة الوجبة للسلة بنجاح! 🥘');
-    // هنا سنضيف لاحقاً منطق الـ LocalStorage للسلة
+    const product = allProducts.find(p => p.id === productId);
+    let cart = JSON.parse(localStorage.getItem('sara_cart')) || [];
+    
+    const existing = cart.find(item => item.id === productId);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        cart.push({ id: product.id, name: product.name, price: product.price, quantity: 1 });
+    }
+    
+    localStorage.setItem('sara_cart', JSON.stringify(cart));
+    alert('تم إضافة ' + product.name + ' للسلة!');
 };
