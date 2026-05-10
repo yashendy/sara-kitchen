@@ -330,4 +330,84 @@ body {
     .cart-wrapper { grid-template-columns: 1fr; }
 }
 
+/* تنسيقات التتبع */
+.search-track-box {
+    display: flex;
+    gap: 10px;
+    max-width: 500px;
+    margin: 40px auto;
+}
 
+.search-track-box input {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid var(--primary);
+    border-radius: 10px;
+    font-family: 'Cairo';
+}
+
+.order-info-card {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+.status-badge {
+    color: var(--primary);
+    background: #fff3e0;
+    padding: 5px 15px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.tracking-timeline {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-top: 50px;
+    padding-bottom: 50px;
+}
+
+.timeline-step {
+    text-align: center;
+    position: relative;
+    flex: 1;
+    z-index: 1;
+}
+
+.step-icon {
+    width: 50px;
+    height: 50px;
+    background: #eee;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    font-size: 1.5rem;
+    transition: 0.3s;
+}
+
+.timeline-step.active .step-icon {
+    background: var(--primary);
+    color: white;
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(230, 126, 34, 0.4);
+}
+
+.timeline-step.completed .step-icon {
+    background: var(--secondary);
+    color: white;
+}
+
+.error-msg {
+    text-align: center;
+    color: #e74c3c;
+    background: #fdeaea;
+    padding: 20px;
+    border-radius: 10px;
+}
