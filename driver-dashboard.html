@@ -11,20 +11,30 @@
 
     <header class="main-header" style="background: var(--secondary); color: white;">
         <div class="container header-flex">
-            <h2>طلبات التوصيل 🛵</h2>
+            <h2>محفظة المندوب 🛵</h2>
             <button onclick="logout()" class="btn-logout" style="background:#c0392b">خروج</button>
         </div>
     </header>
 
     <main class="container">
-        <div style="margin-top: 20px;">
-            <h3 id="driver-welcome">أهلاً بك يا بطل!</h3>
-            <p>إليك الطلبات التي بانتظار التسليم حالياً:</p>
+        <div class="admin-stats" style="margin-top: 20px;">
+            <div class="stat-card">
+                <h4 id="wallet-total">0 ج.م</h4>
+                <p>كاش معاك (إجمالي)</p>
+            </div>
+            <div class="stat-card" style="border-bottom-color: var(--primary);">
+                <h4 id="wallet-earnings">0 ج.م</h4>
+                <p>عمولتك (مكسبك)</p>
+            </div>
+            <div class="stat-card" style="border-bottom-color: #e67e22;">
+                <h4 id="wallet-net">0 ج.م</h4>
+                <p>صافي للمطبخ</p>
+            </div>
         </div>
 
-        <div id="driver-orders-list" style="margin-top: 20px;">
-            <div class="loader">جاري جلب الطلبات...</div>
-        </div>
+        <h3 class="section-title">طلبات بانتظار التوصيل</h3>
+        <div id="driver-orders-list">
+            </div>
     </main>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
