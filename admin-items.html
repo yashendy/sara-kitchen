@@ -20,50 +20,84 @@
     </header>
 
     <main class="container">
-        <section id="add-item-modal" class="modal" style="display:none;">
-            <div class="modal-content">
-                <h3>إضافة وجبة جديدة</h3>
-                <form id="add-product-form">
-                    <div class="form-group">
-                        <label>اسم الوجبة</label>
-                        <input type="text" id="p-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label>الوصف</label>
-                        <textarea id="p-desc" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>السعر (ج.م)</label>
-                        <input type="number" id="p-price" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <label>رابط الصورة</label>
-                        <input type="text" id="p-image" placeholder="ضع رابط صورة الوجبة هنا">
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">حفظ الوجبة</button>
-                        <button type="button" onclick="hideAddItemForm()" class="btn btn-outline">إلغاء</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <div class="orders-table-wrapper" style="margin-top: 30px;">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>الصورة</th>
-                        <th>الاسم</th>
-                        <th>السعر</th>
-                        <th>الحالة</th>
-                        <th>إجراءات</th>
-                    </tr>
-                </thead>
-                <tbody id="admin-products-list">
-                    </tbody>
-            </table>
+    <section id="add-item-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h3>إضافة وجبة جديدة</h3>
+            <form id="add-product-form">
+                <div class="form-group">
+                    <label>اسم الوجبة</label>
+                    <input type="text" id="p-name" required>
+                </div>
+                <div class="form-group">
+                    <label>الوصف</label>
+                    <textarea id="p-desc" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>السعر (ج.م)</label>
+                    <input type="number" id="p-price" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>رابط الصورة</label>
+                    <input type="text" id="p-image" placeholder="ضع رابط صورة الوجبة هنا">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">حفظ الوجبة</button>
+                    <button type="button" onclick="hideAddItemForm()" class="btn btn-outline">إلغاء</button>
+                </div>
+            </form>
         </div>
-    </main>
+    </section>
+
+    <section id="edit-item-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h3>تعديل بيانات الوجبة</h3>
+            <form id="edit-product-form">
+                <input type="hidden" id="edit-p-id">
+                
+                <div class="form-group">
+                    <label>اسم الوجبة</label>
+                    <input type="text" id="edit-p-name" required>
+                </div>
+                <div class="form-group">
+                    <label>الوصف</label>
+                    <textarea id="edit-p-desc" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>السعر (ج.م)</label>
+                    <input type="number" id="edit-p-price" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>رابط الصورة</label>
+                    <input type="text" id="edit-p-image">
+                </div>
+                <div class="form-group" style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                    <input type="checkbox" id="edit-p-available" style="width: auto;">
+                    <label for="edit-p-available" style="margin-bottom: 0;">الوجبة متاحة للطلب حالياً</label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">تحديث البيانات</button>
+                    <button type="button" onclick="hideEditItemForm()" class="btn btn-outline">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <div class="orders-table-wrapper" style="margin-top: 30px;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>الصورة</th>
+                    <th>الاسم</th>
+                    <th>السعر</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody id="admin-products-list">
+                </tbody>
+        </table>
+    </div>
+</main>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
