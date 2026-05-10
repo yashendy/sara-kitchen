@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دخول الإدارة | مطبخ سارة</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+
+    <div class="login-container">
+        <div class="login-box">
+            <img src="logo-sara-kitchen.png" alt="Logo" class="login-logo">
+            <h2>دخول الإدارة</h2>
+            <form id="admin-login-form">
+                <div class="form-group">
+                    <label>رقم الهاتف أو الإيميل</label>
+                    <input type="text" id="admin-user" required placeholder="أدخل بياناتك">
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="admin-pass" required placeholder="******">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">تسجيل الدخول</button>
+            </form>
+            <p id="login-error" class="error-text" style="display: none;">بيانات الدخول غير صحيحة!</p>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/admin-login.js"></script>
+</body>
+</html>
