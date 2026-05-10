@@ -9,25 +9,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadOrders() {
-    const { data, error } = await window.supabaseClient
+    // 1. جلب الطلبات
+    const { data: orders, error: orderError } = await window.supabaseClient
         .from('orders')
         .select('*')
         .order('created_at', { ascending: false });
 
-    if (error) return;
+    if (orderError) return;
 
+    // 2. جلب عدد الأصناف (إضافة جديدة)
+    const { count: productsCount, error: prodError } = await window.supabaseClient
+        .from('products')
+        .select('*', { count: 'exact', head: true });
+
+    // تحديث الأرقام في البطاقات
+    document.getElementById('pending-count').textContent = orders.filter(o => o.status === 'PENDING').length;
+    document.getElementById('preparing-count').textContent = orders.filter(o => o.status === 'PREPARING').length;
+    document.getElementById('delivered-today').textContent = orders.filter(o => o.status === 'DELIVERED').length;
+    
+    // وضع عدد الأصناف في البطاقة الجديدة
+    if (!prodError) {
+        document.getElementById('products-count').textContent = productsCount || 0;
+    }
+
+    // ملء الجدول
     const list = document.getElementById('admin-orders-list');
     list.innerHTML = '';
-    
-    // تحديث الإحصائيات
-    document.getElementById('pending-count').textContent = data.filter(o => o.status === 'PENDING').length;
-    document.getElementById('preparing-count').textContent = data.filter(o => o.status === 'PREPARING').length;
-
-    data.forEach(order => {
+    orders.forEach(order => {
         list.innerHTML += `
             <tr>
                 <td>#${order.order_code}</td>
-                <td>${order.customer_name} <br> <small>${order.customer_phone}</small></td>
+                <td>${order.customer_name}</td>
                 <td>${window.formatCurrency(order.total_amount)}</td>
                 <td><span class="status-badge status-${order.status}">${order.status}</span></td>
                 <td>
