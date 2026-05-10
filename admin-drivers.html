@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المناديب | مطبخ سارة</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+
+    <header class="main-header admin-header">
+        <div class="container header-flex">
+            <h2>إدارة حسابات المناديب 🚚</h2>
+            <nav>
+                <a href="admin-dashboard.html" class="btn-link" style="margin-left: 20px; color: var(--primary); font-weight: bold; text-decoration: none;">العودة للطلبات</a>
+                <button onclick="showAddDriverModal()" class="btn btn-primary">+ إضافة مندوب جديد</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="admin-stats">
+            <div class="stat-card">
+                <h4 id="active-drivers-count">0</h4>
+                <p>مناديب نشطين</p>
+            </div>
+            <div class="stat-card" style="border-bottom-color: var(--secondary);">
+                <h4 id="total-driver-payouts">0 ج.م</h4>
+                <p>إجمالي مستحقات التوصيل (اليوم)</p>
+            </div>
+        </div>
+
+        <h3 class="section-title">قائمة المناديب وحسابات اليوم</h3>
+        <div class="orders-table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>رقم الهاتف</th>
+                        <th>طلبات تم تسليمها (اليوم)</th>
+                        <th>المستحقات المادية</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="drivers-list-body">
+                    </tbody>
+            </table>
+        </div>
+
+        <section id="add-driver-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <h3>إضافة مندوب توصيل جديد</h3>
+                <form id="add-driver-form">
+                    <div class="form-group">
+                        <label>اسم المندوب</label>
+                        <input type="text" id="d-name" placeholder="مثال: ياسين محمد" required>
+                    </div>
+                    <div class="form-group">
+                        <label>رقم الهاتف</label>
+                        <input type="tel" id="d-phone" placeholder="01xxxxxxxxx" required>
+                    </div>
+                    <div class="form-group">
+                        <label>عمولة المندوب عن كل طلب (ج.م)</label>
+                        <input type="number" id="d-fee" value="10" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">حفظ المندوب</button>
+                        <button type="button" onclick="hideAddDriverModal()" class="btn btn-outline">إلغاء</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/admin-drivers.js"></script>
+</body>
+</html>
