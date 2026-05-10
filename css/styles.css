@@ -287,3 +287,47 @@ body {
     cursor: pointer;
 }
 
+.cart-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.item-qty button {
+    padding: 5px 10px;
+    cursor: pointer;
+    background: #eee;
+    border: none;
+}
+
+.cart-summary {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    height: fit-content;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: 'Cairo';
+}
+
+@media (max-width: 768px) {
+    .cart-wrapper { grid-template-columns: 1fr; }
+}
+
+
