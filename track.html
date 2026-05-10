@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تتبع الطلب | مطبخ سارة</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="container header-flex">
+            <div class="logo-area">
+                <img src="logo-sara-kitchen.png" alt="شعار مطبخ سارة" class="logo-img">
+                <h1 class="logo-text">مطبخ سارة</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">الرئيسية</a></li>
+                    <li><a href="menu.html">القائمة</a></li>
+                    <li><a href="track.html" class="active">تتبع طلبك</a></li>
+                    <li><a href="cart.html" class="cart-link">السلة 🛒</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container track-container">
+        <h2 class="section-title">تتبع حالة طلبك</h2>
+        
+        <div class="search-track-box">
+            <input type="text" id="track-code-input" placeholder="أدخل كود الطلب (مثلاً: S-1234)">
+            <button onclick="trackOrder()" class="btn btn-primary">بحث</button>
+        </div>
+
+        <div id="track-result" class="track-result-area" style="display: none;">
+            <div class="order-info-card">
+                <h3>طلب رقم: <span id="res-code"></span></h3>
+                <p>الاسم: <span id="res-name"></span></p>
+                <p>الحالة الحالية: <strong id="res-status" class="status-badge"></strong></p>
+            </div>
+
+            <div class="tracking-timeline">
+                <div class="timeline-step" id="step-PENDING">
+                    <div class="step-icon">📝</div>
+                    <p>بانتظار التأكيد</p>
+                </div>
+                <div class="timeline-step" id="step-PREPARING">
+                    <div class="step-icon">👩‍🍳</div>
+                    <p>قيد التحضير</p>
+                </div>
+                <div class="timeline-step" id="step-WITH_DRIVER">
+                    <div class="step-icon">🛵</div>
+                    <p>مع المندوب</p>
+                </div>
+                <div class="timeline-step" id="step-DELIVERED">
+                    <div class="step-icon">✅</div>
+                    <p>تم التسليم</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="track-error" class="error-msg" style="display: none;">
+            عذراً، لم نجد طلباً بهذا الكود. تأكد من الكود وحاول مرة أخرى.
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p>مطبخ سارة - طعم البيوت الأصلي</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/track.js"></script>
+</body>
+</html>
