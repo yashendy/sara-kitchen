@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم | مطبخ سارة</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="main-header admin-header">
+        <div class="container header-flex">
+            <h2>لوحة إدارة مطبخ سارة</h2>
+            <button onclick="logout()" class="btn-logout">تسجيل خروج</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="admin-stats grid-3">
+            <div class="stat-card">
+                <h4 id="pending-count">0</h4>
+                <p>طلبات جديدة</p>
+            </div>
+            <div class="stat-card">
+                <h4 id="preparing-count">0</h4>
+                <p>قيد التحضير</p>
+            </div>
+            <div class="stat-card">
+                <h4 id="delivered-today">0</h4>
+                <p>تم توصيله اليوم</p>
+            </div>
+        </div>
+
+        <h3 class="section-title">آخر الطلبات المستلمة</h3>
+        <div class="orders-table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>الكود</th>
+                        <th>العميل</th>
+                        <th>المبلغ</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-orders-list">
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/admin-dashboard.js"></script>
+</body>
+</html>
