@@ -1,27 +1,23 @@
 // js/admin-dashboard.js
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. التحقق من صلاحية الأدمن قبل تحميل أي بيانات
     if (sessionStorage.getItem('is_admin') !== 'true') {
         window.location.href = 'admin-login.html';
         return;
     }
-
-    // 2. تشغيل دالة تحميل البيانات
     await loadDashboardData();
 });
 
-// الدالة الرئيسية لجلب وعرض بيانات لوحة التحكم
 async function loadDashboardData() {
     try {
-        // --- أولاً: جلب قائمة المناديب من الجدول الجديد ---
+        // 1. جلب قائمة المناديب
         const { data: drivers, error: driverError } = await window.supabaseClient
             .from('delivery_drivers')
             .select('id, name');
 
         if (driverError) console.error("Error fetching drivers:", driverError);
 
-        // --- ثانياً: جلب بيانات الطلبات ---
+        // 2. جلب الطلبات
         const { data: orders, error: orderError } = await window.supabaseClient
             .from('orders')
             .select('*')
@@ -29,40 +25,28 @@ async function loadDashboardData() {
 
         if (orderError) throw orderError;
 
-        // --- ثالثاً: جلب إحصائية عدد الأصناف ---
-        const { count: productsCount, error: prodError } = await window.supabaseClient
+        // 3. جلب إحصائية الأصناف
+        const { count: productsCount } = await window.supabaseClient
             .from('products')
             .select('*', { count: 'exact', head: true });
 
-        if (prodError) console.error("Error fetching products count:", prodError);
-
-        // --- رابعاً: تحديث بطاقات الإحصائيات في واجهة المستخدم ---
+        // --- تحديث بطاقات الإحصائيات ---
+        document.getElementById('pending-count').textContent = orders.filter(o => o.status === 'PENDING').length;
+        document.getElementById('preparing-count').textContent = orders.filter(o => o.status === 'PREPARING').length;
         
-        document.getElementById('pending-count').textContent = 
-            orders.filter(o => o.status === 'PENDING').length;
-
-        document.getElementById('preparing-count').textContent = 
-            orders.filter(o => o.status === 'PREPARING').length;
-
         const today = new Date().toISOString().split('T')[0];
-        const deliveredToday = orders.filter(o => 
+        document.getElementById('delivered-today').textContent = orders.filter(o => 
             o.status === 'DELIVERED' && o.created_at.startsWith(today)
         ).length;
-        document.getElementById('delivered-today').textContent = deliveredToday;
-
+        
         document.getElementById('products-count').textContent = productsCount || 0;
 
-        // --- خامساً: ملء جدول الطلبات ---
+        // --- ملء جدول الطلبات ---
         const list = document.getElementById('admin-orders-list');
         list.innerHTML = '';
 
-        if (orders.length === 0) {
-            list.innerHTML = '<tr><td colspan="6" style="text-align:center;">لا توجد طلبات مسجلة حتى الآن</td></tr>';
-            return;
-        }
-
         orders.forEach(order => {
-            // بناء قائمة المناديب المنسدلة لكل طلب
+            // بناء قائمة المناديب
             let driverOptions = `<option value="">-- اختر مندوب --</option>`;
             if (drivers) {
                 drivers.forEach(d => {
@@ -78,12 +62,25 @@ async function loadDashboardData() {
                         <small>${order.customer_phone}</small>
                     </td>
                     <td>${window.formatCurrency(order.total_amount)}</td>
+                    
                     <td>
-                        <select onchange="assignDriver(${order.id}, this.value)" style="width: 130px; padding: 5px; font-size: 0.8rem;">
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="number" 
+                                   value="${order.delivery_commission || 10}" 
+                                   onchange="updateCommission(${order.id}, this.value)" 
+                                   style="width: 50px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+                            <span style="font-size: 0.7rem;">ج.م</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <select onchange="assignDriver(${order.id}, this.value)" style="width: 120px; padding: 5px; font-size: 0.8rem;">
                             ${driverOptions}
                         </select>
                     </td>
+                    
                     <td><span class="status-badge status-${order.status}">${getStatusAr(order.status)}</span></td>
+                    
                     <td>
                         <select onchange="updateOrderStatus(${order.id}, this.value)">
                             <option value="PENDING" ${order.status === 'PENDING' ? 'selected' : ''}>إنتظار</option>
@@ -102,38 +99,38 @@ async function loadDashboardData() {
     }
 }
 
-// وظيفة لربط المندوب بالطلب في قاعدة البيانات
+// دالة تحديث عمولة التوصيل (داخل أو خارج المنطقة)
+window.updateCommission = async (orderId, amount) => {
+    const { error } = await window.supabaseClient
+        .from('orders')
+        .update({ delivery_commission: parseFloat(amount) })
+        .eq('id', orderId);
+
+    if (error) alert('خطأ في تحديث العمولة: ' + error.message);
+};
+
+// دالة ربط المندوب بالطلب
 window.assignDriver = async (orderId, driverId) => {
     const valueToUpdate = driverId === "" ? null : parseInt(driverId);
-    
     const { error } = await window.supabaseClient
         .from('orders')
         .update({ driver_id: valueToUpdate })
         .eq('id', orderId);
 
-    if (error) {
-        alert('حدث خطأ أثناء تعيين المندوب: ' + error.message);
-    } else {
-        // تحديث البيانات لضمان دقة الحسابات في الإحصائيات
-        await loadDashboardData();
-    }
+    if (error) alert('خطأ في تعيين المندوب: ' + error.message);
+    else await loadDashboardData();
 };
 
-// وظيفة لتحديث حالة الطلب
+// دالة تحديث الحالة
 window.updateOrderStatus = async (orderId, newStatus) => {
     const { error } = await window.supabaseClient
         .from('orders')
         .update({ status: newStatus })
         .eq('id', orderId);
 
-    if (error) {
-        alert('فشل في تحديث الحالة: ' + error.message);
-    } else {
-        await loadDashboardData();
-    }
+    if (!error) await loadDashboardData();
 };
 
-// وظيفة مساعدة للترجمة
 function getStatusAr(status) {
     const statusMap = {
         'PENDING': 'بانتظار التأكيد',
@@ -145,7 +142,6 @@ function getStatusAr(status) {
     return statusMap[status] || status;
 }
 
-// تسجيل الخروج
 window.logout = () => {
     sessionStorage.clear();
     window.location.href = 'admin-login.html';
