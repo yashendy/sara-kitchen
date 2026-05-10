@@ -2,25 +2,38 @@
 
 document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const user = document.getElementById('admin-user').value;
-    const pass = document.getElementById('admin-pass').value;
+    const userIdentifier = document.getElementById('admin-user').value.trim();
+    const password = document.getElementById('admin-pass').value.trim();
     const errorEl = document.getElementById('login-error');
 
-    // الاستعلام من جدول users عن الأدمن
-    const { data, error } = await window.supabaseClient
-        .from('users')
-        .select('*')
-        .or(`email.eq.${user},phone.eq.${user}`)
-        .eq('password_hash', pass)
-        .eq('role', 'ADMIN')
-        .single();
+    errorEl.style.display = 'none';
 
-    if (error || !data) {
-        errorEl.style.display = 'block';
-    } else {
-        // حفظ بيانات الجلسة مؤقتاً
-        sessionStorage.setItem('is_admin', 'true');
-        sessionStorage.setItem('admin_name', data.email);
-        window.location.href = 'admin-dashboard.html';
+    try {
+        // الاستعلام باستخدام فلتر بسيط وتجنب الأخطاء المعقدة
+        const { data, error } = await window.supabaseClient
+            .from('users')
+            .select('*')
+            .or(`email.eq.${userIdentifier},phone.eq.${userIdentifier}`)
+            .eq('password_hash', password)
+            .eq('role', 'ADMIN');
+
+        if (error) throw error;
+
+        // التأكد من وجود مستخدم واحد على الأقل يطابق البيانات
+        if (data && data.length > 0) {
+            const admin = data[0];
+            if(admin.is_active) {
+                sessionStorage.setItem('is_admin', 'true');
+                sessionStorage.setItem('admin_id', admin.id);
+                window.location.href = 'admin-dashboard.html';
+            } else {
+                alert("هذا الحساب غير مفعل حالياً.");
+            }
+        } else {
+            errorEl.style.display = 'block'; // بيانات غير صحيحة
+        }
+    } catch (err) {
+        console.error("Login Error:", err);
+        alert("حدث خطأ في الاتصال بقاعدة البيانات. تأكدي من إغلاق RLS.");
     }
 });
