@@ -411,3 +411,16 @@ body {
     padding: 20px;
     border-radius: 10px;
 }
+
+/* تنسيقات الإدارة */
+.admin-body { background: #f0f2f5; }
+.login-container { height: 100vh; display: flex; align-items: center; justify-content: center; }
+.login-box { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+.login-logo { height: 80px; margin-bottom: 20px; }
+.admin-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; margin-top: 20px; }
+.admin-table th, .admin-table td { padding: 15px; text-align: right; border-bottom: 1px solid #eee; }
+.admin-table th { background: #f8f9fa; }
+.status-PENDING { background: #ffeaa7; color: #d35400; }
+.status-PREPARING { background: #fab1a0; color: #e17055; }
+.status-DELIVERED { background: #55efc4; color: #00b894; }
+.btn-logout { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
