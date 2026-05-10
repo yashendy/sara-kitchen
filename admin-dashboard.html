@@ -1,24 +1,26 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<header class="main-header admin-header">
-    <div class="container header-flex">
-        <h2>لوحة إدارة مطبخ سارة</h2>
-        <nav>
-            <a href="admin-items.html" class="btn-link" style="margin-left: 20px; text-decoration: none; color: white;">إدارة الأصناف</a>
-            <button onclick="logout()" class="btn-logout">تسجيل خروج</button>
-        </nav>
-    </div>
-</header>
-<body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم | مطبخ سارة</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+
     <header class="main-header admin-header">
         <div class="container header-flex">
             <h2>لوحة إدارة مطبخ سارة</h2>
-            <button onclick="logout()" class="btn-logout">تسجيل خروج</button>
+            <nav>
+                <a href="admin-items.html" class="btn-link" style="margin-left: 20px; color: var(--primary); font-weight: bold;">إدارة الأصناف</a>
+                <button onclick="logout()" class="btn-logout">تسجيل خروج</button>
+            </nav>
         </div>
     </header>
 
     <main class="container">
-        <div class="admin-stats grid-3">
+        <div class="admin-stats">
             <div class="stat-card">
                 <h4 id="pending-count">0</h4>
                 <p>طلبات جديدة</p>
@@ -32,9 +34,9 @@
                 <p>تم توصيله اليوم</p>
             </div>
             <div class="stat-card">
-    <h4 id="products-count">0</h4>
-    <p>إجمالي الأصناف</p>
-    </div>
+                <h4 id="products-count">0</h4>
+                <p>إجمالي الأصناف</p>
+            </div>
         </div>
 
         <h3 class="section-title">آخر الطلبات المستلمة</h3>
