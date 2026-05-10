@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قائمة الطعام | مطبخ سارة</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="container header-flex">
+            <div class="logo-area">
+                <img src="logo-sara-kitchen.png" alt="شعار مطبخ سارة" class="logo-img">
+                <h1 class="logo-text">مطبخ سارة</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">الرئيسية</a></li>
+                    <li><a href="menu.html" class="active">القائمة</a></li>
+                    <li><a href="track.html">تتبع طلبك</a></li>
+                    <li><a href="cart.html" class="cart-link">السلة <span id="cart-count">0</span> 🛒</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="menu-header container">
+        <h2 class="section-title">قائمة الطعام الطازج</h2>
+        <div class="menu-controls">
+            <div class="search-box">
+                <input type="text" id="menu-search" placeholder="ابحث عن وجبة معينة...">
+            </div>
+            <div class="category-filters" id="category-list">
+                <button class="filter-btn active" data-category="all">الكل</button>
+                </div>
+        </div>
+    </section>
+
+    <main class="container">
+        <div class="products-grid" id="products-container">
+            <div class="loader">جاري تحميل أشهى الوجبات...</div>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p>مطبخ سارة للأكل البيتي - طعم لا يُنسى</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/menu.js"></script>
+</body>
+</html>
