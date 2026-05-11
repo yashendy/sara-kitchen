@@ -165,3 +165,92 @@ window.removeFromCart = (index) => {
     localStorage.setItem('cart', JSON.stringify(cart));
     renderCart(); // إعادة العرض فوراً
 };
+
+let appliedCoupon = null; // لتخزين بيانات الكوبون لو اتفعل
+
+// 1. دالة تطبيق الكوبون
+async function applyCoupon() {
+    const code = document.getElementById('coupon-input').value.trim().toUpperCase();
+    const msgEl = document.getElementById('coupon-msg');
+    const subtotal = parseFloat(document.getElementById('subtotal-price').innerText) || 0;
+
+    if (!code) return;
+
+    try {
+        // البحث عن الكوبون في Supabase
+        const { data: coupon, error } = await window.supabaseClient
+            .from('coupons')
+            .select('*')
+            .eq('code', code)
+            .eq('is_active', true)
+            .single();
+
+        if (error || !coupon) {
+            msgEl.innerText = "❌ الكوبون غير صحيح أو منتهي الصلاحية";
+            msgEl.style.color = "red";
+            removeCoupon();
+            return;
+        }
+
+        // التأكد من تاريخ الانتهاء
+        if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+            msgEl.innerText = "❌ هذا الكوبون انتهت صلاحيته";
+            msgEl.style.color = "red";
+            removeCoupon();
+            return;
+        }
+
+        // التأكد من الحد الأدنى للطلب
+        if (subtotal < coupon.min_order_amount) {
+            msgEl.innerText = `⚠️ يلزمك طلب بـ ${coupon.min_order_amount} ج.م لتفعيل الخصم`;
+            msgEl.style.color = "orange";
+            removeCoupon();
+            return;
+        }
+
+        // لو كله تمام، نحسب الخصم
+        appliedCoupon = coupon;
+        msgEl.innerText = "✅ تم تطبيق الخصم بنجاح!";
+        msgEl.style.color = "green";
+        updateTotalWithDelivery(); // إعادة حساب الإجمالي بالخصم
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// 2. تعديل دالة الحساب لتشمل الخصم (عدلي الدالة الموجودة عندك لتصبح هكذا)
+window.updateTotalWithDelivery = () => {
+    const subtotal = parseFloat(document.getElementById('subtotal-price').innerText) || 0;
+    const deliveryType = document.getElementById('delivery-type').value;
+    const zoneValue = document.getElementById('delivery-zone').value;
+    
+    let deliveryCost = 0;
+    if (deliveryType === 'DELIVERY' && zoneValue !== 'custom') {
+        deliveryCost = parseFloat(zoneValue);
+    }
+
+    // حساب قيمة الخصم
+    let discountValue = 0;
+    if (appliedCoupon) {
+        if (appliedCoupon.discount_type === 'PERCENTAGE') {
+            discountValue = subtotal * (appliedCoupon.discount_value / 100);
+        } else {
+            discountValue = appliedCoupon.discount_value;
+        }
+        
+        document.getElementById('discount-display').style.display = 'flex';
+        document.getElementById('discount-amount').innerText = `-${discountValue.toFixed(2)} ج.م`;
+    } else {
+        document.getElementById('discount-display').style.display = 'none';
+    }
+
+    const finalTotal = subtotal + deliveryCost - discountValue;
+    document.getElementById('total-price').innerText = `${finalTotal.toFixed(2)} ج.م`;
+    document.getElementById('delivery-cost').innerText = `${deliveryCost.toFixed(2)} ج.م`;
+};
+
+function removeCoupon() {
+    appliedCoupon = null;
+    updateTotalWithDelivery();
+}
