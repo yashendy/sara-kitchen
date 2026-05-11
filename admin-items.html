@@ -1,107 +1,177 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة المنيو | مطبخ سارة</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-</head>
-<body class="admin-body">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إدارة الأصناف - مطبخ سارة</title>
 
-    <header class="main-header admin-header">
-        <div class="container header-flex">
-            <h2>إدارة قائمة الطعام</h2>
-            <nav>
-                <a href="admin-dashboard.html" class="btn-link">الطلبات</a>
-                <button onclick="showAddItemForm()" class="btn btn-primary">+ إضافة وجبة جديدة</button>
-            </nav>
-        </div>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin-dashboard.css" />
+    <style>
+      /* ستايلات بسيطة للبادجات في الجدول */
+      .badge-offer { background: #fef3c7; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-right: 5px;}
+      .badge-calories { color: #ef4444; font-size: 0.8rem; display: block; margin-top: 3px; }
+      .badge-tags { color: #10b981; font-size: 0.8rem; display: block; margin-top: 2px; }
+    </style>
+  </head>
+
+  <body data-page="admin-items">
+    <header class="navbar">
+      <div class="container">
+        <div class="logo">🍲 مطبخ سارة</div>
+        <nav class="nav-links">
+          <a href="index.html">الرئيسية</a>
+          <a href="menu.html">القائمة</a>
+          <a href="cart.html">السلة</a>
+          <a href="track.html">تتبع طلب</a>
+          <a href="admin-dashboard.html">لوحة الأدمن</a>
+          <a href="admin-orders.html">إدارة الطلبات</a>
+          <a href="admin-items.html" class="active">إدارة الأصناف</a>
+          <a href="admin-offers.html">العروض والولاء</a>
+        </nav>
+      </div>
     </header>
 
-    <main class="container">
-    <section id="add-item-modal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <h3>إضافة وجبة جديدة</h3>
-            <form id="add-product-form">
-                <div class="form-group">
-                    <label>اسم الوجبة</label>
-                    <input type="text" id="p-name" required>
-                </div>
-                <div class="form-group">
-                    <label>الوصف</label>
-                    <textarea id="p-desc" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>السعر (ج.م)</label>
-                    <input type="number" id="p-price" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label>رابط الصورة</label>
-                    <input type="text" id="p-image" placeholder="ضع رابط صورة الوجبة هنا">
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">حفظ الوجبة</button>
-                    <button type="button" onclick="hideAddItemForm()" class="btn btn-outline">إلغاء</button>
-                </div>
-            </form>
-        </div>
-    </section>
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1 class="admin-page-title">إدارة الأصناف</h1>
+        <p class="admin-page-subtitle">التحكم في الأصناف، الأسعار، التوافر، والبيانات الغذائية.</p>
+      </header>
 
-    <section id="edit-item-modal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <h3>تعديل بيانات الوجبة</h3>
-            <form id="edit-product-form">
-                <input type="hidden" id="edit-p-id">
-                
-                <div class="form-group">
-                    <label>اسم الوجبة</label>
-                    <input type="text" id="edit-p-name" required>
-                </div>
-                <div class="form-group">
-                    <label>الوصف</label>
-                    <textarea id="edit-p-desc" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>السعر (ج.م)</label>
-                    <input type="number" id="edit-p-price" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label>رابط الصورة</label>
-                    <input type="text" id="edit-p-image">
-                </div>
-                <div class="form-group" style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
-                    <input type="checkbox" id="edit-p-available" style="width: auto;">
-                    <label for="edit-p-available" style="margin-bottom: 0;">الوجبة متاحة للطلب حالياً</label>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">تحديث البيانات</button>
-                    <button type="button" onclick="hideEditItemForm()" class="btn btn-outline">إلغاء</button>
-                </div>
-            </form>
+      <section class="admin-filters-bar">
+        <div class="filters-group">
+          <label for="item-search-input">بحث بالاسم:</label>
+          <input type="text" id="item-search-input" placeholder="اكتبي جزء من اسم الصنف..." />
         </div>
-    </section>
 
-    <div class="orders-table-wrapper" style="margin-top: 30px;">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>الصورة</th>
-                    <th>الاسم</th>
-                    <th>السعر</th>
-                    <th>الحالة</th>
-                    <th>إجراءات</th>
-                </tr>
-            </thead>
-            <tbody id="admin-products-list">
-                </tbody>
-        </table>
+        <div class="filters-group">
+          <label for="item-category-filter">التصنيف:</label>
+          <select id="item-category-filter"><option value="ALL">كل التصنيفات</option></select>
+        </div>
+
+        <div class="filters-group">
+          <label for="item-availability-filter">التوافر:</label>
+          <select id="item-availability-filter">
+            <option value="ALL">الكل</option>
+            <option value="AVAILABLE">متاح فقط</option>
+            <option value="UNAVAILABLE">غير متاح فقط</option>
+          </select>
+        </div>
+
+        <div class="filters-group">
+          <button id="btn-add-item" class="btn-primary">+ إضافة صنف</button>
+          <button id="btn-manage-categories" class="btn-secondary">إدارة التصنيفات</button>
+        </div>
+      </section>
+
+      <section id="admin-items-container" class="admin-table-container">
+        <p class="admin-orders-placeholder">جارٍ تحميل الأصناف...</p>
+      </section>
+    </main>
+
+    <div class="admin-modal" id="itemModal" hidden>
+      <div class="admin-modal-dialog" style="max-width: 600px;">
+        <header class="admin-modal-header">
+          <h3 class="admin-modal-title" id="itemModalTitle">إضافة / تعديل صنف</h3>
+          <button id="closeItemModalX" class="admin-modal-close">×</button>
+        </header>
+        <div class="admin-modal-body">
+          <form id="itemForm" class="admin-form">
+            
+            <div class="form-row" style="display: flex; gap: 15px;">
+              <div style="flex: 2;">
+                <label for="itemName">اسم الصنف</label>
+                <input type="text" id="itemName" required />
+              </div>
+              <div style="flex: 1;">
+                <label for="itemPrice">السعر (ج.م)</label>
+                <input type="number" id="itemPrice" min="0" step="0.5" required />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label for="itemCategory">التصنيف</label>
+              <select id="itemCategory" required><option value="">اختاري التصنيف</option></select>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+            <h4 style="margin-bottom: 10px; color: #475569;">بيانات إضافية وغذائية</h4>
+
+            <div class="form-row" style="display: flex; gap: 15px;">
+              <div style="flex: 1;">
+                <label for="itemCalories">السعرات (🔥)</label>
+                <input type="number" id="itemCalories" placeholder="مثال: 250" min="0" />
+              </div>
+              <div style="flex: 2;">
+                <label for="itemTags">كلمات دلالية (🍃)</label>
+                <input type="text" id="itemTags" placeholder="مثال: دايت, نباتي, بدون سكر" />
+                <small style="color: #64748b;">افصلي بين الكلمات بفاصلة</small>
+              </div>
+            </div>
+
+            <div class="form-row" style="display: flex; gap: 20px; margin-top: 15px; background: #f8fafc; padding: 10px; border-radius: 8px;">
+              <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                <input type="checkbox" id="itemInstant" style="width: auto;" /> فوري ⚡
+              </label>
+              <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                <input type="checkbox" id="itemInOffer" style="width: auto;" /> في العرض 🏷️
+              </label>
+              <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                <input type="checkbox" id="itemAvailable" checked style="width: auto;" /> متاح للطلب ✅
+              </label>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+
+            <div class="form-row">
+              <label>صورة الصنف</label>
+              <div class="image-input-wrapper" style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" id="itemImageBtn" class="btn-secondary">اختيار صورة</button>
+                <span id="itemImageFileName" style="font-size: 0.9rem; color: #64748b;">لم يتم اختيار صورة</span>
+              </div>
+              <div id="itemImagePreview" class="image-preview" style="margin-top: 10px;" hidden>
+                <img src="" alt="صورة الصنف" style="max-width: 100px; border-radius: 8px;" />
+              </div>
+              <input type="file" id="itemImageInput" accept="image/*" hidden />
+            </div>
+
+            <div class="form-row"><p id="itemFormMessage" style="color: red;"></p></div>
+          </form>
+        </div>
+        <footer class="admin-modal-footer">
+          <button class="btn-secondary" id="cancelItemModalBtn">إلغاء</button>
+          <button class="btn-primary" id="saveItemBtn">حفظ الصنف</button>
+        </footer>
+      </div>
     </div>
-</main>
 
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <div class="admin-modal" id="categoryModal" hidden>
+      <div class="admin-modal-dialog">
+        <header class="admin-modal-header">
+          <h3 class="admin-modal-title" id="categoryModalTitle">إدارة التصنيفات</h3>
+          <button id="closeCategoryModalX" class="admin-modal-close" type="button">×</button>
+        </header>
+        <div class="admin-modal-body">
+          <form id="categoryForm" class="admin-form">
+            <div class="form-row"><label for="categoryName">اسم التصنيف</label><input type="text" id="categoryName" required /></div>
+            <div class="form-row"><p id="categoryFormMessage"></p></div>
+          </form>
+          <section class="order-details-section" style="margin-top: 0.5rem">
+            <h4>التصنيفات الحالية</h4>
+            <div id="categoryListContainer" class="admin-table-container-inner"></div>
+          </section>
+        </div>
+        <footer class="admin-modal-footer">
+          <button class="btn-secondary" id="cancelCategoryModalBtn" type="button">إغلاق</button>
+          <button class="btn-secondary" id="newCategoryBtn" type="button">تصنيف جديد</button>
+          <button class="btn-primary" id="saveCategoryBtn" type="button">حفظ</button>
+        </footer>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
     <script src="js/admin-items.js"></script>
-</body>
+  </body>
 </html>
