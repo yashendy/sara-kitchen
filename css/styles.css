@@ -471,3 +471,73 @@ body {
     border-radius: 8px; /* بيعمل حواف دائرية ناعمة وشيك */
     margin-left: 15px;  /* مسافة بين الصورة واسم المنتج */
 }
+
+/* =========================================
+   شريط التنقل (الهيدر الموحد) لجميع الصفحات
+========================================= */
+.navbar {
+  background: #0f172a; /* لون كحلي داكن فخم */
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000; /* عشان يفضل فوق كل حاجة وإنتي بتنزلي بالصفحة */
+  font-family: 'Cairo', sans-serif;
+}
+
+.navbar .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.navbar .logo a {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #d97706; /* البرتقالي المميز لمطبخ سارة */
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.nav-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.nav-links a {
+  color: #cbd5e1;
+  text-decoration: none;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.nav-links a:hover, 
+.nav-links a.active {
+  background: rgba(217, 119, 6, 0.2); /* خلفية برتقالي خفيفة عند التحديد */
+  color: #d97706;
+}
+
+/* تنسيق خاص برقم السلة عشان يكون بارز */
+.cart-link {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#cart-count {
+  background: #ef4444; /* أحمر للتنبيه */
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
