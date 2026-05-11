@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إدارة العروض والكوبونات - مطبخ سارة</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin-dashboard.css" />
+    <style>
+        /* ستايلات إضافية لصفحة العروض */
+        .offers-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 0.85rem; font-weight: bold; }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-inactive { background: #f8d7da; color: #721c24; }
+        .loyalty-section { background: #fff; padding: 20px; border-radius: 8px; margin-top: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-right: 5px solid var(--secondary); }
+    </style>
+</head>
+
+<body data-page="admin-offers">
+    <header class="navbar">
+        <div class="container">
+            <div class="logo">🍲 مطبخ سارة</div>
+            <nav class="nav-links">
+                <a href="admin-dashboard.html">لوحة الأدمن</a>
+                <a href="admin-orders.html">إدارة الطلبات</a>
+                <a href="admin-items.html">إدارة الأصناف</a>
+                <a href="admin-offers.html" class="active">العروض والولاء</a>
+                <a href="admin-drivers.html">إدارة المندوبين</a>
+                <a href="index.html">الرئيسية</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container admin-main" style="margin-top: 30px;">
+        <div class="offers-header">
+            <h2>🎟️ إدارة الكوبونات والخصومات</h2>
+            <button class="btn btn-primary" onclick="openCouponModal()">+ إضافة كوبون جديد</button>
+        </div>
+
+        <div class="admin-table-container">
+            <table class="admin-table" id="coupons-table">
+                <thead>
+                    <tr>
+                        <th>كود الخصم</th>
+                        <th>القيمة</th>
+                        <th>الحد الأدنى للطلب</th>
+                        <th>تاريخ الانتهاء</th>
+                        <th>الاستخدامات</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="coupons-list">
+                    <tr><td colspan="7" style="text-align:center;">جاري تحميل الكوبونات...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="loyalty-section">
+            <h3>⭐ إعدادات نقاط الولاء (قريباً)</h3>
+            <p style="color: #666; margin-bottom: 15px;">هنا ستقومين بتحديد قيمة النقطة ومكافآت العملاء المستمرين.</p>
+            <div style="display: flex; gap: 15px;">
+                <input type="number" placeholder="كل كم جنيه = 1 نقطة؟" disabled class="form-control" style="width: 200px;">
+                <button class="btn btn-secondary" disabled>حفظ الإعدادات</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="couponModal" class="admin-modal" style="display: none;">
+        <div class="admin-modal-content">
+            <header class="admin-modal-header">
+                <h3 id="modal-title">إضافة كوبون جديد</h3>
+            </header>
+            <div class="admin-modal-body">
+                <form id="couponForm" class="admin-form">
+                    <input type="hidden" id="couponId">
+                    
+                    <div class="form-row">
+                        <label>كود الخصم (مثال: SARA20)</label>
+                        <input type="text" id="couponCode" required style="text-transform: uppercase;">
+                    </div>
+
+                    <div class="form-row" style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label>نوع الخصم</label>
+                            <select id="discountType" required>
+                                <option value="PERCENTAGE">نسبة مئوية (%)</option>
+                                <option value="FIXED">مبلغ ثابت (ج.م)</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label>قيمة الخصم</label>
+                            <input type="number" id="discountValue" required min="1">
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label>الحد الأدنى للطلب (ج.م)</label>
+                            <input type="number" id="minOrder" value="0" min="0">
+                        </div>
+                        <div style="flex: 1;">
+                            <label>تاريخ الانتهاء</label>
+                            <input type="date" id="expiryDate">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <footer class="admin-modal-footer">
+                <button class="btn-secondary" onclick="closeCouponModal()">إلغاء</button>
+                <button class="btn-primary" onclick="saveCoupon()">حفظ الكوبون</button>
+            </footer>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/admin-offers.js"></script>
+</body>
+</html>
