@@ -200,3 +200,33 @@ body[data-page^="admin-"] {
   border-color: var(--admin-primary);
   box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
 }
+
+/* إصلاح النافذة المنبثقة (Modal) لكي لا تظهر إلا عند الضغط */
+.admin-modal[hidden] {
+  display: none !important;
+}
+
+/* تنسيق شريط الفلاتر ليكون بشكل احترافي */
+.admin-filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  background: var(--admin-card-bg);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 20px;
+  align-items: flex-end;
+}
+
+.filters-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filters-group label {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #475569;
+}
