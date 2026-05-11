@@ -39,10 +39,10 @@ async function loadCategoriesAndProducts() {
   try {
     const [catRes, prodRes] = await Promise.all([
       window.supabaseClient.from("categories").select("id, name").order("name", { ascending: true }),
-      // تمت إضافة العواميد الجديدة للـ Select
+      // تم تعديل updated_at إلى created_at ليتوافق مع قاعدة البيانات
       window.supabaseClient.from("products")
-        .select("id, name, price, is_instant, is_available, category_id, image_url, updated_at, calories, in_offer, tags")
-        .order("updated_at", { ascending: false }),
+        .select("id, name, price, is_instant, is_available, category_id, image_url, created_at, calories, in_offer, tags")
+        .order("created_at", { ascending: false }),
     ]);
 
     itemsState.categories = catRes.data || [];
@@ -163,7 +163,8 @@ function setupItemModalUI() {
   imageInput?.addEventListener("change", (e) => {
     const file = e.target.files[0];
     currentImageFile = file || null;
-    document.getElementById("itemImageFileName").textContent = file ? file.name : "لم يتم اختيار صورة";
+    const fileNameSpan = document.getElementById("itemImageFileName");
+    if (fileNameSpan) fileNameSpan.textContent = file ? file.name : "لم يتم اختيار صورة";
     if (file) {
       const reader = new FileReader();
       reader.onload = (ev) => {
@@ -179,7 +180,8 @@ function closeItemModal() {
   document.getElementById("itemModal").hidden = true;
   document.getElementById("itemForm").reset();
   document.getElementById("itemImagePreview").hidden = true;
-  document.getElementById("itemImageFileName").textContent = "لم يتم اختيار صورة";
+  const fileNameSpan = document.getElementById("itemImageFileName");
+  if (fileNameSpan) fileNameSpan.textContent = "لم يتم اختيار صورة";
   currentEditedItem = null; currentImageFile = null; currentImageUrl = null;
 }
 
@@ -284,11 +286,7 @@ async function saveItemForm(e) {
     }
 
     alert("تم حفظ الصنف بنجاح!");
-    if (typeof closeItemModal === 'function') {
-        closeItemModal();
-    } else {
-        document.getElementById("itemModal").hidden = true;
-    }
+    closeItemModal();
     await loadCategoriesAndProducts();
   } catch (err) {
     console.error(err);
