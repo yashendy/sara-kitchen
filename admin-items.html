@@ -109,7 +109,6 @@
               <div style="flex: 2;">
                 <label for="itemTags">كلمات دلالية (🍃)</label>
                 <input type="text" id="itemTags" placeholder="مثال: دايت, نباتي, بدون سكر" />
-                <small style="color: #64748b;">افصلي بين الكلمات بفاصلة</small>
               </div>
             </div>
 
@@ -126,25 +125,57 @@
             </div>
 
             <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
-
-            <div class="form-row">
-              <label>صورة الصنف</label>
-              <div class="image-input-wrapper" style="display: flex; gap: 10px; align-items: center;">
-                <button type="button" id="itemImageBtn" class="btn-secondary">اختيار صورة</button>
-                <span id="itemImageFileName" style="font-size: 0.9rem; color: #64748b;">لم يتم اختيار صورة</span>
+            <h4 style="margin-bottom: 10px; color: #475569;">صورة الصنف</h4>
+            
+            <div class="form-row" style="display: flex; gap: 15px; align-items: flex-end; background: #f1f5f9; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+              <div style="flex: 2;">
+                <label for="itemImageUrl">رابط الصورة الخارجي (URL)</label>
+                <input type="url" id="itemImageUrl" placeholder="https://example.com/image.jpg" />
               </div>
-              <div id="itemImagePreview" class="image-preview" style="margin-top: 10px;" hidden>
-                <img src="" alt="صورة الصنف" style="max-width: 100px; border-radius: 8px;" />
+              <div style="flex: 1; text-align: center;">
+                <span style="display:block; margin-bottom: 8px; color: #64748b; font-size: 0.85rem; font-weight: bold;">أو</span>
+                <button type="button" id="itemImageBtn" class="btn-secondary" style="width: 100%; padding: 0.75rem;">اختر من الجهاز 📁</button>
+                <input type="file" id="itemImageInput" accept="image/*" hidden />
               </div>
-              <input type="file" id="itemImageInput" accept="image/*" hidden />
+            </div>
+            
+            <div id="itemImagePreview" class="image-preview" style="margin-top: 15px; text-align: center;" hidden>
+              <img src="" alt="صورة الصنف" style="max-width: 120px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
             </div>
 
-            <div class="form-row"><p id="itemFormMessage" style="color: red;"></p></div>
+            <div class="form-row"><p id="itemFormMessage" style="color: red; text-align: center; margin-top: 10px;"></p></div>
           </form>
         </div>
         <footer class="admin-modal-footer">
           <button class="btn-secondary" id="cancelItemModalBtn">إلغاء</button>
           <button class="btn-primary" id="saveItemBtn">حفظ الصنف</button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="categoryModal" hidden>
+      <div class="admin-modal-dialog" style="max-width: 500px;">
+        <header class="admin-modal-header">
+          <h3 class="admin-modal-title" id="categoryModalTitle">إدارة التصنيفات</h3>
+          <button id="closeCategoryModalX" class="admin-modal-close" type="button">×</button>
+        </header>
+        <div class="admin-modal-body">
+          <form id="categoryForm" class="admin-form">
+            <div class="form-row">
+                <label for="categoryName">اسم التصنيف</label>
+                <input type="text" id="categoryName" required placeholder="مثال: وجبات رئيسية" />
+            </div>
+            <div class="form-row"><p id="categoryFormMessage" style="color: green; text-align: center;"></p></div>
+          </form>
+          <section class="order-details-section" style="margin-top: 1rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+            <h4 style="margin-bottom: 10px; color: #475569;">التصنيفات الحالية</h4>
+            <div id="categoryListContainer" class="admin-table-container-inner"></div>
+          </section>
+        </div>
+        <footer class="admin-modal-footer">
+          <button class="btn-secondary" id="cancelCategoryModalBtn" type="button">إغلاق</button>
+          <button class="btn-secondary" id="newCategoryBtn" type="button">تصنيف جديد ➕</button>
+          <button class="btn-primary" id="saveCategoryBtn" type="button">حفظ</button>
         </footer>
       </div>
     </div>
