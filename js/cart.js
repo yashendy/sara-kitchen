@@ -102,6 +102,7 @@ window.updateTotalWithDelivery = () => {
 /**
  * 4. دالة معالجة إرسال الطلب لقاعدة البيانات
  */
+// دالة معالجة إرسال الطلب لقاعدة البيانات
 async function handleOrderSubmit(e) {
     e.preventDefault();
     
@@ -116,6 +117,12 @@ async function handleOrderSubmit(e) {
     const finalTotalText = document.getElementById('total-price').innerText;
     const finalTotal = parseFloat(finalTotalText.replace(" ج.م", ""));
 
+    // --- التعديل هنا: الحصول على العنوان بأمان لتفادي خطأ null ---
+    const addressInput = document.getElementById('cust-address');
+    const customerAddress = (deliveryType === 'PICKUP') 
+        ? 'استلام من المطبخ' 
+        : (addressInput ? addressInput.value : 'لم يتم إدخال عنوان');
+
     // تحديد عمولة المندوب بناءً على المنطقة المختارة
     let commission = 0;
     if (deliveryType === 'DELIVERY') {
@@ -126,19 +133,20 @@ async function handleOrderSubmit(e) {
         }
     }
 
+    // تجهيز بيانات الطلب للإرسال
     const orderData = {
         customer_name: document.getElementById('cust-name').value,
         customer_phone: document.getElementById('cust-phone').value,
-        customer_address: deliveryType === 'PICKUP' ? 'استلام من المطبخ' : document.getElementById('cust-address').value,
-        total_amount: finalTotal,
-        delivery_commission: commission, // إرسال العمولة لجدول الطلبات
+        customer_address: customerAddress, // استخدام المتغير الآمن
+        total_amount: finalTotal, // السعر النهائي (شامل الخصم لو فيه كوبون)
+        delivery_commission: commission, 
         status: 'PENDING',
-        order_code: 'S' + Math.floor(1000 + Math.random() * 9000), // كود مميز للطلب
+        order_code: 'S' + Math.floor(1000 + Math.random() * 9000), 
         created_at: new Date().toISOString()
     };
 
     try {
-        const { data, error } = await window.supabaseClient
+        const { error } = await window.supabaseClient
             .from('orders')
             .insert([orderData]);
 
@@ -165,6 +173,7 @@ window.removeFromCart = (index) => {
     localStorage.setItem('cart', JSON.stringify(cart));
     renderCart(); // إعادة العرض فوراً
 };
+
 
 let appliedCoupon = null; // لتخزين بيانات الكوبون لو اتفعل
 
