@@ -189,6 +189,7 @@ function openItemModalForCreate() {
   document.getElementById("itemModal").hidden = false;
 }
 
+// 1. تعبئة البيانات عند فتح التعديل (محدثة لتقرأ رابط الصورة)
 function openItemModalForEdit(itemId) {
   const item = itemsState.products.find(p => String(p.id) === String(itemId));
   if (!item) return;
@@ -207,16 +208,24 @@ function openItemModalForEdit(itemId) {
   document.getElementById("itemInOffer").checked = !!item.in_offer;
   document.getElementById("itemTags").value = item.tags || "";
 
+  // تعبئة خانة رابط الصورة
+  const imgUrlInput = document.getElementById("itemImageUrl");
+  if (imgUrlInput) imgUrlInput.value = item.image_url || "";
+
   if (item.image_url) {
     currentImageUrl = item.image_url;
     document.getElementById("itemImagePreview").querySelector("img").src = item.image_url;
     document.getElementById("itemImagePreview").hidden = false;
-    document.getElementById("itemImageFileName").textContent = "يوجد صورة مسجلة";
+    const fileNameSpan = document.getElementById("itemImageFileName");
+    if (fileNameSpan) fileNameSpan.textContent = "يوجد صورة مسجلة";
+  } else {
+    document.getElementById("itemImagePreview").hidden = true;
   }
 
   document.getElementById("itemModal").hidden = false;
 }
 
+// 2. دالة رفع الصورة (كما هي)
 async function uploadItemImage(file, productId) {
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
   const filePath = `${productId}/${Date.now()}.${ext}`;
@@ -225,6 +234,7 @@ async function uploadItemImage(file, productId) {
   return window.supabaseClient.storage.from("product-images").getPublicUrl(filePath).data.publicUrl;
 }
 
+// 3. دالة الحفظ المحدثة (تدمج بين الرابط والرفع من الجهاز)
 async function saveItemForm(e) {
   e.preventDefault();
   const name = document.getElementById("itemName").value.trim();
@@ -233,6 +243,11 @@ async function saveItemForm(e) {
   
   if (!name || !category_id || isNaN(price)) return alert("يرجى إكمال البيانات الأساسية.");
 
+  // قراءة الرابط من الخانة الجديدة
+  let finalImageUrl = "";
+  const imgUrlInput = document.getElementById("itemImageUrl");
+  if (imgUrlInput) finalImageUrl = imgUrlInput.value.trim();
+
   // جمع البيانات الجديدة
   const payload = {
     name, category_id, price,
@@ -240,15 +255,17 @@ async function saveItemForm(e) {
     is_available: document.getElementById("itemAvailable").checked,
     in_offer: document.getElementById("itemInOffer").checked,
     calories: Number(document.getElementById("itemCalories").value) || null,
-    tags: document.getElementById("itemTags").value.trim() || null
+    tags: document.getElementById("itemTags").value.trim() || null,
+    image_url: finalImageUrl || null // استخدام الرابط لو لم يتم رفع ملف
   };
 
   try {
     let savedItem;
     if (currentEditedItem) {
-      let image_url = currentImageUrl;
-      if (currentImageFile) image_url = await uploadItemImage(currentImageFile, currentEditedItem.id);
-      if (image_url) payload.image_url = image_url;
+      // لو اختار ملف من جهازه، نرفعه ونستبدل الرابط
+      if (currentImageFile) {
+        payload.image_url = await uploadItemImage(currentImageFile, currentEditedItem.id);
+      }
       
       const { data, error } = await window.supabaseClient.from("products").update(payload).eq("id", currentEditedItem.id).select().single();
       if (error) throw error;
@@ -267,7 +284,11 @@ async function saveItemForm(e) {
     }
 
     alert("تم حفظ الصنف بنجاح!");
-    closeItemModal();
+    if (typeof closeItemModal === 'function') {
+        closeItemModal();
+    } else {
+        document.getElementById("itemModal").hidden = true;
+    }
     await loadCategoriesAndProducts();
   } catch (err) {
     console.error(err);
@@ -275,6 +296,7 @@ async function saveItemForm(e) {
   }
 }
 
+// 4. دالة التفعيل والإيقاف (كما هي)
 async function toggleItemAvailability(itemId) {
   const item = itemsState.products.find(p => String(p.id) === String(itemId));
   const { error } = await window.supabaseClient.from("products").update({ is_available: !item.is_available }).eq("id", item.id);
