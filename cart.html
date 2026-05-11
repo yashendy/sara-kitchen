@@ -36,53 +36,61 @@
             <div class="cart-summary">
                 <h3>إتمام الطلب</h3>
                 <form id="order-form">
-    <div class="form-group">
-        <label>الاسم بالكامل</label>
-        <input type="text" id="cust-name" required placeholder="أدخل اسمك">
-    </div>
-    <div class="form-group">
-        <label>رقم الهاتف</label>
-        <input type="tel" id="cust-phone" required placeholder="أدخل رقمك للتواصل">
-    </div>
-    <div class="form-group">
-        <label>طريقة الاستلام</label>
-        <select id="delivery-type" onchange="toggleDeliveryZones()">
-            <option value="DELIVERY">توصيل للمنزل</option>
-            <option value="PICKUP">استلام من المطبخ (مجاناً)</option>
-        </select>
-    </div>
+                    <div class="form-group">
+                        <label>الاسم بالكامل</label>
+                        <input type="text" id="cust-name" required placeholder="أدخل اسمك">
+                    </div>
 
-    <div class="form-group" id="zones-group">
-        <label>منطقة التوصيل</label>
-        <select id="delivery-zone" onchange="updateTotalWithDelivery()">
-            <option value="30">داخل المنطقة / منطقة قريبة (30 ج.م)</option>
-            <option value="50">منطقة بعيدة (50 ج.م)</option>
-            <option value="custom">محافظة أخرى (يحدد لاحقاً)</option>
-        </select>
-    </div>
+                    <div class="form-group">
+                        <label>رقم الهاتف</label>
+                        <input type="tel" id="cust-phone" required placeholder="أدخل رقمك للتواصل">
+                    </div>
 
-    <div class="form-group" id="address-group">
-        <label>العنوان بالتفصيل</label>
-        <textarea id="cust-address" placeholder="المنطقة، القطعة، الشارع..."></textarea>
-    </div>
-    
-    <hr>
-    <div class="total-area">
-        <div class="price-row">
-            <span>إجمالي المشتريات:</span>
-            <span id="subtotal-price">0.00 ج.م</span>
-        </div>
-        <div class="price-row" id="delivery-row">
-            <span>خدمة التوصيل:</span>
-            <span id="delivery-cost">30.00 ج.م</span>
-        </div>
-        <div class="price-row total-final">
-            <strong>الإجمالي النهائي:</strong>
-            <strong id="total-price">0.00 ج.م</strong>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">تأكيد الطلب الآن 🥘</button>
-    </div>
-</form>
+                    <div class="form-group">
+                        <label>طريقة الاستلام</label>
+                        <select id="delivery-type" onchange="toggleDeliveryZones()">
+                            <option value="DELIVERY">توصيل للمنزل 🚚</option>
+                            <option value="PICKUP">استلام من المطبخ (مجاناً) 🏠</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="zones-group">
+                        <label>منطقة التوصيل</label>
+                        <select id="delivery-zone" onchange="updateTotalWithDelivery()">
+                            <option value="30">داخل المنطقة / منطقة قريبة (30 ج.م)</option>
+                            <option value="50">منطقة بعيدة (50 ج.م)</option>
+                            <option value="custom">محافظة أخرى (يحدد لاحقاً)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="address-group">
+                        <label>العنوان بالتفصيل</label>
+                        <textarea id="cust-address" placeholder="المنطقة، القطعة، الشارع، رقم المنزل..."></textarea>
+                    </div>
+                    
+                    <hr>
+
+                    <div class="total-area">
+                        <div class="price-row">
+                            <span>إجمالي الطلب:</span>
+                            <span id="subtotal-price">0.00 ج.م</span>
+                        </div>
+
+                        <div class="price-row" id="delivery-row">
+                            <span>رسوم التوصيل:</span>
+                            <span id="delivery-cost">30.00 ج.م</span>
+                        </div>
+
+                        <div class="price-row total-final" style="border-top: 2px solid #eee; padding-top: 10px; margin-top: 10px;">
+                            <strong>الإجمالي النهائي:</strong>
+                            <strong id="total-price" style="font-size: 1.5rem; color: var(--secondary);">0.00 ج.م</strong>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 20px; font-size: 1.1rem;">
+                            تأكيد الطلب الآن 🥘
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </main>
