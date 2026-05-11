@@ -51,13 +51,21 @@
                     </div>
 
                     <div id="zones-group" class="form-group">
-                        <label>المنطقة</label>
-                        <select id="delivery-zone" onchange="window.updateTotalWithDelivery()">
-                            <option value="30">داخل المنطقة / قريبة (30 ج.م)</option>
-                            <option value="50">بعيدة (50 ج.م)</option>
-                            <option value="custom">محافظة أخرى (يحدد لاحقاً)</option>
-                        </select>
-                    </div>
+    <label>المنطقة</label>
+    <select id="delivery-zone" onchange="window.updateTotalWithDelivery()">
+        <option value="30">داخل المنطقة / قريبة (30 ج.م)</option>
+        <option value="50">بعيدة (50 ج.م)</option>
+        <option value="custom">محافظة أخرى (يحدد لاحقاً)</option>
+    </select>
+</div>
+
+<div class="form-group" id="address-group">
+    <label>العنوان بالتفصيل</label>
+    <textarea id="cust-address" required placeholder="المنطقة، الشارع، العمارة، رقم الشقة..."></textarea>
+</div>
+
+<div class="coupon-wrapper">
+...
 
                     <div class="coupon-wrapper">
                         <label style="font-size: 0.9rem; font-weight: bold;">هل لديك كود خصم؟</label>
