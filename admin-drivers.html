@@ -79,6 +79,37 @@
 </form>
             </div>
         </section>
+        <section id="edit-driver-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h3>تعديل بيانات المندوب</h3>
+        <form id="edit-driver-form">
+            <input type="hidden" id="edit-d-id"> <input type="hidden" id="edit-u-id"> <div class="form-group">
+                <label>الاسم الكامل</label>
+                <input type="text" id="edit-d-name" required>
+            </div>
+            <div class="form-group">
+                <label>رقم الهاتف</label>
+                <input type="tel" id="edit-d-phone" required>
+            </div>
+            <div class="form-group">
+                <label>طريقة التوصيل</label>
+                <select id="edit-d-method">
+                    <option value="سيارة">سيارة</option>
+                    <option value="موتوسيكل">موتوسيكل</option>
+                    <option value="عجلة">عجلة</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>ملاحظات للعميل</label>
+                <input type="text" id="edit-d-notes">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">تحديث البيانات</button>
+                <button type="button" onclick="hideEditDriverModal()" class="btn btn-outline">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</section>
     </main>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
