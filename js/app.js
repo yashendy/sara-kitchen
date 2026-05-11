@@ -1,4 +1,4 @@
-// app.js - المحرك الرئيسي لمنصة مطبخ سارة
+// js/app.js - المحرك الرئيسي لمنصة مطبخ سارة
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. التحقق من وجود الإعدادات
@@ -23,11 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- وظائف السلة (إضافة وتحديث العداد) ---
 
-// 1. وظيفة إضافة منتج للسلة (تُستخدم في صفحة المنيو)
+// 1. وظيفة إضافة منتج للسلة
 window.addToCart = (id, name, price, image) => {
+    // تأكدي أننا نستخدم المفتاح 'cart' دائماً لتوحيد البيانات
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
     
-    // البحث إذا كان المنتج موجود مسبقاً لزيادة الكمية
     const existingItem = cart.find(item => item.id === id);
     if (existingItem) {
         existingItem.quantity += 1;
@@ -49,23 +49,33 @@ window.addToCart = (id, name, price, image) => {
     window.showAlert(`تم إضافة ${name} للسلة بنجاح ✅`);
 };
 
-// 2. وظيفة تحديث رقم الأصناف في أيقونة السلة (تظهر في الهيدر)
+// 2. وظيفة تحديث رقم الأصناف في الهيدر (تعديل حيوي)
 window.updateCartCount = () => {
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const countElements = document.querySelectorAll('.cart-link'); // نبحث عن كل روابط السلة
     
-    // حساب إجمالي عدد القطع في السلة
+    // حساب إجمالي عدد القطع (Quantity) وليس فقط عدد الأنواع
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     
-    countElements.forEach(el => {
-        // تحديث النص ليظهر الرقم بجانب الكلمة
-        el.innerHTML = `السلة 🛒 <span class="cart-badge">${totalItems}</span>`;
+    // أولاً: التحديث من خلال الـ ID الصريح (cart-count) الذي وضعتِه في HTML
+    const countElement = document.getElementById('cart-count');
+    if (countElement) {
+        countElement.textContent = totalItems;
+    }
+
+    // ثانياً: التحديث الاحتياطي لأي روابط تحمل كلاس .cart-link
+    const cartLinks = document.querySelectorAll('.cart-link');
+    cartLinks.forEach(link => {
+        // إذا كان الرابط لا يحتوي على سبان بالداخل، نحدث النص بجانب الإيموجي
+        const spanInside = link.querySelector('span');
+        if (!spanInside) {
+            link.innerHTML = `السلة 🛒 (${totalItems})`;
+        }
     });
 };
 
 // --- وظائف التنسيق والواجهة ---
 
-// وظيفة لتنسيق الأسعار حسب العملة
+// وظيفة لتنسيق الأسعار حسب العملة المختارة في الإعدادات
 window.formatCurrency = (amount) => {
     const { label } = window.APP_CONFIG.currency;
     return `${parseFloat(amount).toFixed(2)} ${label}`;
