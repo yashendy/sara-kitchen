@@ -52,23 +52,31 @@
             <div class="modal-content">
                 <h3>إضافة مندوب توصيل جديد</h3>
                 <form id="add-driver-form">
-                    <div class="form-group">
-                        <label>اسم المندوب</label>
-                        <input type="text" id="d-name" placeholder="مثال: ياسين محمد" required>
-                    </div>
-                    <div class="form-group">
-                        <label>رقم الهاتف</label>
-                        <input type="tel" id="d-phone" placeholder="01xxxxxxxxx" required>
-                    </div>
-                    <div class="form-group">
-                        <label>عمولة المندوب عن كل طلب (ج.م)</label>
-                        <input type="number" id="d-fee" value="10" required>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">حفظ المندوب</button>
-                        <button type="button" onclick="hideAddDriverModal()" class="btn btn-outline">إلغاء</button>
-                    </div>
-                </form>
+    <div class="form-group">
+        <label>اسم المندوب</label>
+        <input type="text" id="d-name" required>
+    </div>
+    <div class="form-group">
+        <label>رقم الهاتف (سيكون هو كلمة المرور)</label>
+        <input type="tel" id="d-phone" required>
+    </div>
+    <div class="form-group">
+        <label>طريقة التوصيل</label>
+        <select id="d-method">
+            <option value="سيارة">سيارة</option>
+            <option value="موتوسيكل">موتوسيكل</option>
+            <option value="عجلة">عجلة</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>ملاحظات للعميل (تظهر في التتبع)</label>
+        <input type="text" id="d-notes" placeholder="مثال: يلتزم بالإجراءات الاحترازية">
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">حفظ المندوب</button>
+        <button type="button" onclick="hideAddDriverModal()" class="btn btn-outline">إلغاء</button>
+    </div>
+</form>
             </div>
         </section>
     </main>
