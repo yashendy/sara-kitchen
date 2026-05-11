@@ -1,10 +1,12 @@
 // js/admin-drivers.js
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // التحقق من الأدمن
     if (sessionStorage.getItem('is_admin') !== 'true') {
         window.location.href = 'admin-login.html';
         return;
     }
+
     await loadDriversData();
 
     document.getElementById('add-driver-form').addEventListener('submit', async (e) => {
@@ -12,15 +14,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const name = document.getElementById('d-name').value;
         const phone = document.getElementById('d-phone').value;
-        const email = `${phone}@sara.com`;
+        const method = document.getElementById('d-method').value; // طريقة التوصيل
+        const notes = document.getElementById('d-notes').value;   // ملاحظات للعميل
 
         try {
-            // الخطوة 1: إنشاء حساب المستخدم
-            const { data: user, error: userError } = await window.supabaseClient
+            // 1. إضافة المستخدم لجدول users
+            // سيتم إدخال "password" لسهولة تسجيل الدخول لاحقاً
+            const { data: newUser, error: userError } = await window.supabaseClient
                 .from('users')
                 .insert([{ 
-                    email: email, 
-                    password: phone, // سيستخدم رقم تليفونه ككلمة مرور
+                    email: `${phone}@sara.com`, 
+                    phone: phone,
+                    password: phone, // كلمة المرور هي رقم التليفون
+                    password_hash: 'not_hashed_yet', // لأننا نستخدم نظام بسيط حالياً
                     role: 'DRIVER', 
                     full_name: name 
                 }])
@@ -28,67 +34,52 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (userError) throw userError;
 
-            // الخطوة 2: ربط بيانات المندوب
-            const { error: drError } = await window.supabaseClient
+            // 2. إضافة تفاصيل المندوب لجدول delivery_drivers
+            const { error: driverError } = await window.supabaseClient
                 .from('delivery_drivers')
                 .insert([{ 
-                    user_id: user.id, 
+                    id: newUser.id, // نستخدم نفس ID اليوزر لتوحيد البيانات
+                    user_id: newUser.id,
                     name: name, 
-                    phone: phone 
+                    phone: phone,
+                    delivery_method: method,
+                    notes: notes,
+                    status: 'ACTIVE'
                 }]);
 
-            if (drError) throw drError;
+            if (driverError) throw driverError;
 
-            alert("تم تسجيل المندوب بنجاح ✅");
+            alert("تم تسجيل المندوب بنجاح! يمكنه الدخول برقم هاتفه.");
             hideAddDriverModal();
-            location.reload(); // إعادة تحميل الصفحة لتحديث الجدول
+            location.reload();
 
         } catch (err) {
-            console.error("Error Details:", err);
-            alert("خطأ: " + (err.message || "تأكد من إعدادات قاعدة البيانات"));
+            console.error("Error details:", err);
+            alert("خطأ: " + err.message);
         }
     });
 });
 
 async function loadDriversData() {
-    // جلب المناديب والطلبات المسلمة
-    const { data: drivers } = await window.supabaseClient.from('delivery_drivers').select('*');
-    const { data: orders } = await window.supabaseClient.from('orders').select('*').eq('status', 'DELIVERED');
+    const { data: drivers, error } = await window.supabaseClient
+        .from('delivery_drivers')
+        .select('*');
+
+    if (error) return;
 
     const listBody = document.getElementById('drivers-list-body');
-    if (!listBody) return;
     listBody.innerHTML = '';
     
-    let totalPayouts = 0;
-
-    if (drivers) {
-        drivers.forEach(driver => {
-            const dOrders = orders ? orders.filter(o => o.driver_id === driver.id) : [];
-            const earnings = dOrders.reduce((sum, o) => sum + (o.delivery_commission || 10), 0);
-            totalPayouts += earnings;
-
-            listBody.innerHTML += `
-                <tr>
-                    <td>${driver.name}</td>
-                    <td>${driver.phone}</td>
-                    <td>${dOrders.length} طلب</td>
-                    <td>${window.formatCurrency(earnings)}</td>
-                    <td><button onclick="deleteDriver(${driver.id}, ${driver.user_id})" class="btn-remove">حذف</button></td>
-                </tr>
-            `;
-        });
-    }
-
-    document.getElementById('active-drivers-count').textContent = drivers ? drivers.length : 0;
-    document.getElementById('total-driver-payouts').textContent = window.formatCurrency(totalPayouts);
+    drivers.forEach(driver => {
+        listBody.innerHTML += `
+            <tr>
+                <td><strong>${driver.name}</strong><br><small>${driver.delivery_method || ''}</small></td>
+                <td>${driver.phone}</td>
+                <td>نشط</td>
+                <td>
+                    <button onclick="deleteDriver(${driver.id})" class="btn-remove" style="background:#e74c3c; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">حذف</button>
+                </td>
+            </tr>
+        `;
+    });
 }
-
-window.showAddDriverModal = () => document.getElementById('add-driver-modal').style.display = 'flex';
-window.hideAddDriverModal = () => document.getElementById('add-driver-modal').style.display = 'none';
-
-window.deleteDriver = async (drId, uId) => {
-    if (confirm('حذف المندوب نهائياً؟')) {
-        await window.supabaseClient.from('users').delete().eq('id', uId);
-        location.reload();
-    }
-};
