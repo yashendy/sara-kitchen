@@ -5,90 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سلة المشتريات | مطبخ سارة</title>
     <link rel="stylesheet" href="css/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin-dashboard.css"> <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .coupon-area { display: flex; gap: 10px; margin: 15px 0; }
+        .coupon-area input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+        .discount-row { color: #10b981; font-weight: bold; display: none; } /* يظهر فقط عند تفعيل الكوبون */
+        #coupon-msg { font-size: 0.85rem; margin-top: 5px; }
+    </style>
 </head>
 <body>
 
-    <header class="main-header">
-        <div class="container header-flex">
-            <div class="logo-area">
-                <img src="logo-sara-kitchen.png" alt="شعار مطبخ سارة" class="logo-img">
-                <h1 class="logo-text">مطبخ سارة</h1>
-            </div>
-            <nav class="main-nav">
-                <ul>
-                    <li><a href="index.html">الرئيسية</a></li>
-                    <li><a href="menu.html">القائمة</a></li>
-                    <li><a href="track.html">تتبع طلبك</a></li>
-                    <li><a href="cart.html" class="active cart-link">السلة 🛒</a></li>
-                </ul>
+    <header class="navbar">
+        <div class="container">
+            <div class="logo">🍲 مطبخ سارة</div>
+            <nav class="nav-links">
+                <a href="index.html">الرئيسية</a>
+                <a href="menu.html">القائمة</a>
+                <a href="cart.html" class="active">السلة <span id="cart-count">0</span></a>
+                <a href="track.html">تتبع طلب</a>
+                <a href="admin-dashboard.html">لوحة الأدمن</a>
+                <a href="admin-offers.html">العروض والولاء</a>
             </nav>
         </div>
     </header>
 
-    <main class="container cart-container">
+    <main class="container admin-main">
         <h2 class="section-title">سلة المشتريات</h2>
         
-        <div class="cart-wrapper">
+        <div class="cart-wrapper" style="display: grid; grid-template-columns: 1fr 350px; gap: 20px;">
             <div class="cart-items" id="cart-items-container">
                 </div>
 
-            <div class="cart-summary">
+            <div class="cart-summary" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <h3>إتمام الطلب</h3>
                 <form id="order-form">
-                    <div class="form-group">
-                        <label>الاسم بالكامل</label>
-                        <input type="text" id="cust-name" required placeholder="أدخل اسمك">
-                    </div>
-
-                    <div class="form-group">
-                        <label>رقم الهاتف</label>
-                        <input type="tel" id="cust-phone" required placeholder="أدخل رقمك للتواصل">
-                    </div>
-
+                    <div class="form-group"><label>الاسم</label><input type="text" id="cust-name" required></div>
+                    <div class="form-group"><label>الهاتف</label><input type="tel" id="cust-phone" required></div>
+                    
                     <div class="form-group">
                         <label>طريقة الاستلام</label>
-                        <select id="delivery-type" onchange="toggleDeliveryZones()">
-                            <option value="DELIVERY">توصيل للمنزل 🚚</option>
-                            <option value="PICKUP">استلام من المطبخ (مجاناً) 🏠</option>
+                        <select id="delivery-type" onchange="window.toggleDeliveryZones()">
+                            <option value="DELIVERY">توصيل للمنزل</option>
+                            <option value="PICKUP">استلام من المطبخ</option>
                         </select>
                     </div>
 
-                    <div class="form-group" id="zones-group">
-                        <label>منطقة التوصيل</label>
-                        <select id="delivery-zone" onchange="updateTotalWithDelivery()">
-                            <option value="30">داخل المنطقة / منطقة قريبة (30 ج.م)</option>
-                            <option value="50">منطقة بعيدة (50 ج.م)</option>
+                    <div id="zones-group" class="form-group">
+                        <label>المنطقة</label>
+                        <select id="delivery-zone" onchange="window.updateTotalWithDelivery()">
+                            <option value="30">داخل المنطقة / قريبة (30 ج.م)</option>
+                            <option value="50">بعيدة (50 ج.م)</option>
                             <option value="custom">محافظة أخرى (يحدد لاحقاً)</option>
                         </select>
                     </div>
 
-                    <div class="form-group" id="address-group">
-                        <label>العنوان بالتفصيل</label>
-                        <textarea id="cust-address" placeholder="المنطقة، القطعة، الشارع، رقم المنزل..."></textarea>
+                    <div class="coupon-wrapper">
+                        <label style="font-size: 0.9rem; font-weight: bold;">هل لديك كود خصم؟</label>
+                        <div class="coupon-area">
+                            <input type="text" id="coupon-input" placeholder="أدخل الكود هنا">
+                            <button type="button" onclick="applyCoupon()" class="btn-secondary" style="white-space: nowrap;">تطبيق</button>
+                        </div>
+                        <div id="coupon-msg"></div>
                     </div>
-                    
+
                     <hr>
-
                     <div class="total-area">
-                        <div class="price-row">
-                            <span>إجمالي الطلب:</span>
-                            <span id="subtotal-price">0.00 ج.م</span>
+                        <div class="price-row"><span>المشتريات:</span> <span id="subtotal-price">0.00 ج.م</span></div>
+                        <div class="price-row" id="delivery-row"><span>التوصيل:</span> <span id="delivery-cost">30.00 ج.م</span></div>
+                        <div class="price-row discount-row" id="discount-display"><span>خصم الكوبون:</span> <span id="discount-amount">-0.00 ج.م</span></div>
+                        <div class="price-row" style="font-size: 1.3rem; margin-top: 10px;">
+                            <strong>الإجمالي:</strong> <strong id="total-price" style="color: var(--admin-primary);">0.00 ج.م</strong>
                         </div>
-
-                        <div class="price-row" id="delivery-row">
-                            <span>رسوم التوصيل:</span>
-                            <span id="delivery-cost">30.00 ج.م</span>
-                        </div>
-
-                        <div class="price-row total-final" style="border-top: 2px solid #eee; padding-top: 10px; margin-top: 10px;">
-                            <strong>الإجمالي النهائي:</strong>
-                            <strong id="total-price" style="font-size: 1.5rem; color: var(--secondary);">0.00 ج.م</strong>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 20px; font-size: 1.1rem;">
-                            تأكيد الطلب الآن 🥘
-                        </button>
+                        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 15px; width: 100%;">تأكيد الطلب 🥘</button>
                     </div>
                 </form>
             </div>
