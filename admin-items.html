@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin-dashboard.css" />
     <style>
-      /* ستايلات بسيطة للبادجات في الجدول */
       .badge-offer { background: #fef3c7; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-right: 5px;}
       .badge-calories { color: #ef4444; font-size: 0.8rem; display: block; margin-top: 3px; }
       .badge-tags { color: #10b981; font-size: 0.8rem; display: block; margin-top: 2px; }
@@ -16,27 +15,26 @@
   </head>
 
   <body data-page="admin-items">
+    
     <header class="navbar">
-    <div class="container">
-        <div class="logo">
-            <a href="index.html" style="text-decoration: none; color: inherit;">🍲 مطبخ سارة</a>
+        <div class="container">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none; color: inherit;">🍲 مطبخ سارة</a>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html">الرئيسية</a>
+                <a href="menu.html">القائمة</a>
+                <a href="cart.html" class="cart-link">السلة <span id="cart-count">0</span> 🛒</a>
+                <a href="track.html">تتبع طلبك</a>
+                <span style="color: #475569; margin: 0 10px;">|</span>
+                <a href="admin-dashboard.html">الداشبورد</a>
+                <a href="admin-orders.html">الطلبات</a>
+                <a href="admin-items.html" class="active">الأصناف</a>
+                <a href="admin-offers.html">العروض والولاء</a>
+                <a href="admin-drivers.html">المندوبين</a>
+            </nav>
         </div>
-        <nav class="nav-links">
-            <a href="index.html">الرئيسية</a>
-            <a href="menu.html">القائمة</a>
-            <a href="cart.html" class="cart-link">السلة <span id="cart-count">0</span> 🛒</a>
-            <a href="track.html">تتبع طلبك</a>
-
-            <span style="color: #475569; margin: 0 10px;">|</span>
-
-            <a href="admin-dashboard.html">الداشبورد</a>
-            <a href="admin-orders.html">الطلبات</a>
-            <a href="admin-items.html">الأصناف</a>
-            <a href="admin-offers.html">العروض والولاء</a>
-            <a href="admin-drivers.html">المندوبين</a>
-        </nav>
-    </div>
-</header>
+    </header>
 
     <main class="admin-main">
       <header class="admin-header">
@@ -64,7 +62,7 @@
           </select>
         </div>
 
-        <div class="filters-group">
+        <div class="filters-group" style="flex-direction: row; align-items: flex-end;">
           <button id="btn-add-item" class="btn-primary">+ إضافة صنف</button>
           <button id="btn-manage-categories" class="btn-secondary">إدارة التصنيفات</button>
         </div>
@@ -147,30 +145,6 @@
         <footer class="admin-modal-footer">
           <button class="btn-secondary" id="cancelItemModalBtn">إلغاء</button>
           <button class="btn-primary" id="saveItemBtn">حفظ الصنف</button>
-        </footer>
-      </div>
-    </div>
-
-    <div class="admin-modal" id="categoryModal" hidden>
-      <div class="admin-modal-dialog">
-        <header class="admin-modal-header">
-          <h3 class="admin-modal-title" id="categoryModalTitle">إدارة التصنيفات</h3>
-          <button id="closeCategoryModalX" class="admin-modal-close" type="button">×</button>
-        </header>
-        <div class="admin-modal-body">
-          <form id="categoryForm" class="admin-form">
-            <div class="form-row"><label for="categoryName">اسم التصنيف</label><input type="text" id="categoryName" required /></div>
-            <div class="form-row"><p id="categoryFormMessage"></p></div>
-          </form>
-          <section class="order-details-section" style="margin-top: 0.5rem">
-            <h4>التصنيفات الحالية</h4>
-            <div id="categoryListContainer" class="admin-table-container-inner"></div>
-          </section>
-        </div>
-        <footer class="admin-modal-footer">
-          <button class="btn-secondary" id="cancelCategoryModalBtn" type="button">إغلاق</button>
-          <button class="btn-secondary" id="newCategoryBtn" type="button">تصنيف جديد</button>
-          <button class="btn-primary" id="saveCategoryBtn" type="button">حفظ</button>
         </footer>
       </div>
     </div>
