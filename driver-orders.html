@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة المندوب الذكية - مطبخ سارة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css" />
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #f1f5f9; margin: 0; padding-bottom: 30px; }
+        .driver-header { background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%); color: white; padding: 25px 20px; text-align: center; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .logout-btn { position: absolute; left: 15px; top: 20px; background: rgba(255,255,255,0.2); color: white; border: none; padding: 7px 12px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        
+        /* ستايل المحفظة الاحترافي */
+        .wallet-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: -20px 15px 20px; position: relative; z-index: 101; }
+        .wallet-card { background: white; padding: 12px 5px; border-radius: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-bottom: 4px solid #ddd; }
+        .wallet-card h4 { margin: 0; font-size: 0.9rem; color: #64748b; }
+        .wallet-card div { font-size: 1rem; font-weight: 800; margin-top: 5px; }
+        
+        .container { padding: 0 15px; max-width: 600px; margin: auto; }
+        .section-title { font-weight: 800; color: #1e293b; margin: 20px 5px 15px; display: flex; align-items: center; gap: 8px; }
+        
+        .order-card { background: white; border-radius: 18px; padding: 18px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
+        .order-id { font-weight: 800; background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-size: 0.9rem; }
+        .order-items { background: #f8fafc; padding: 10px; border-radius: 10px; margin: 12px 0; font-size: 0.9rem; color: #475569; border: 1px solid #edf2f7; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-small { flex: 1; padding: 10px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; text-decoration: none; font-size: 0.9rem; }
+        .btn-call { background: #eff6ff; color: #3b82f6; }
+        .btn-map { background: #f0fdf4; color: #16a34a; }
+        .btn-complete { width: 100%; background: var(--primary); color: white; padding: 14px; border: none; border-radius: 12px; margin-top: 12px; font-weight: 800; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 6px rgba(255, 159, 67, 0.2); }
+    </style>
+</head>
+<body>
+
+    <header class="driver-header">
+        <button class="logout-btn" onclick="window.handleLogout()">خروج</button>
+        <h1 style="margin:0; font-size:1.4rem;">🚚 بوابة المندوب</h1>
+        <p id="driver-name" style="margin:5px 0 0; opacity:0.9;">أهلاً بك يا بطل</p>
+    </header>
+
+    <div class="wallet-container">
+        <div class="wallet-card" style="border-color: #10b981;">
+            <h4>كاش معاك</h4>
+            <div id="stat-cash" style="color: #10b981;">0</div>
+        </div>
+        <div class="wallet-card" style="border-color: #3b82f6;">
+            <h4>عمولتك</h4>
+            <div id="stat-earnings" style="color: #3b82f6;">0</div>
+        </div>
+        <div class="wallet-card" style="border-color: #f59e0b;">
+            <h4>للمطبخ</h4>
+            <div id="stat-net" style="color: #f59e0b;">0</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h3 class="section-title">📦 طلبات قيد التوصيل</h3>
+        <div id="orders-list">
+            <p style="text-align:center; padding:20px; color:#64748b;">جاري تحميل مهامك اليومية... ⏳</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/driver.js"></script>
+</body>
+</html>
