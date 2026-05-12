@@ -1,6 +1,16 @@
 // js/cart.js
 
-document.addEventListener('DOMContentLoaded', () => {
+// متغيرات عامة لحفظ الكوبونات وإعدادات المتجر
+let appliedCoupon = null; 
+let storeSettings = {
+    bulk_threshold: 500, // قيم افتراضية
+    bulk_discount_percent: 10
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // جلب إعدادات المتجر أولاً لتفعيل الخصم التلقائي
+    await fetchStoreSettings();
+    
     // تحميل السلة عند فتح الصفحة
     renderCart();
 
@@ -11,10 +21,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// 1. جلب إعدادات الخصم التلقائي من قاعدة البيانات
+async function fetchStoreSettings() {
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('store_settings')
+            .select('*')
+            .eq('id', 1)
+            .single();
+
+        if (data && !error) {
+            storeSettings = data;
+        }
+    } catch (err) {
+        console.error("خطأ في جلب إعدادات المتجر:", err);
+    }
+}
+
 /**
- * 1. دالة عرض محتويات السلة وتحديث الأسعار الأولية
+ * 2. دالة عرض محتويات السلة وتحديث الأسعار الأولية وإضافة خانة الكمية
  */
 function renderCart() {
+    // لو انتي مسمية السلة cart او sara_cart، اتأكدي من الاسم، هنا استخدمنا 'cart' زي الكود بتاعك
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
     const container = document.getElementById('cart-items-container');
     let subtotal = 0;
@@ -32,13 +60,26 @@ function renderCart() {
         const itemTotal = item.price * item.quantity;
         subtotal += itemTotal;
         container.innerHTML += `
-            <div class="cart-item">
-                <img src="${item.image || 'default-food.png'}" alt="${item.name}">
-                <div class="item-details">
-                    <h4>${item.name}</h4>
-                    <p>${item.price} ج.م × ${item.quantity}</p>
+            <div class="cart-item" style="display: flex; align-items: center; background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <img src="${item.image_url || item.image || 'default-food.png'}" alt="${item.name}" style="width: 70px; height: 70px; border-radius: 8px; margin-left: 15px;">
+                
+                <div class="item-details" style="flex-grow: 1;">
+                    <h4 style="margin: 0 0 5px 0;">${item.name}</h4>
+                    <p style="color: #64748b; font-size: 0.9rem; margin: 0;">${item.price} ج.م</p>
                 </div>
-                <button onclick="removeFromCart(${index})" class="btn-remove">حذف</button>
+                
+                <div style="display: flex; align-items: center; gap: 10px; margin-left: 15px;">
+                    <label style="font-size: 0.85rem; font-weight: bold; color: #475569;">الكمية:</label>
+                    <input type="number" min="1" value="${item.quantity}" 
+                           onchange="updateItemQuantity(${index}, this.value)" 
+                           style="width: 60px; padding: 5px; text-align: center; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit;">
+                </div>
+
+                <div style="font-weight: bold; margin-left: 15px; color: var(--primary);">
+                    ${itemTotal.toFixed(2)} ج.م
+                </div>
+
+                <button onclick="removeFromCart(${index})" class="btn-remove" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">حذف</button>
             </div>
         `;
     });
@@ -51,141 +92,22 @@ function renderCart() {
 }
 
 /**
- * 2. دالة التحكم في إظهار/إخفاء خيارات التوصيل
+ * 3. دالة تعديل الكمية يدوياً
  */
-window.toggleDeliveryZones = () => {
-    const type = document.getElementById('delivery-type').value;
-    const zonesGroup = document.getElementById('zones-group');
-    const deliveryRow = document.getElementById('delivery-row');
-    const addressGroup = document.getElementById('address-group');
+window.updateItemQuantity = (index, newQuantity) => {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    let qty = parseInt(newQuantity);
     
-    if (type === 'PICKUP') {
-        zonesGroup.style.display = 'none';
-        deliveryRow.style.display = 'none';
-        addressGroup.style.display = 'none'; // العنوان غير ضروري عند الاستلام من المطبخ
-    } else {
-        zonesGroup.style.display = 'block';
-        deliveryRow.style.display = 'flex';
-        addressGroup.style.display = 'block';
-    }
-    updateTotalWithDelivery();
+    if (qty < 1) qty = 1; // منع الكميات السالبة أو الصفر
+    
+    cart[index].quantity = qty;
+    localStorage.setItem('cart', JSON.stringify(cart));
+    
+    renderCart(); // إعادة رسم السلة لتحديث الأسعار والإجمالي
 };
 
 /**
- * 3. دالة تحديث الحسبة النهائية (المشتريات + التوصيل)
- */
-window.updateTotalWithDelivery = () => {
-    const subtotalText = document.getElementById('subtotal-price').innerText;
-    const subtotal = parseFloat(subtotalText.replace(" ج.م", "")) || 0;
-    
-    const deliveryType = document.getElementById('delivery-type').value;
-    const zoneValue = document.getElementById('delivery-zone').value;
-    
-    let deliveryCost = 0;
-    
-    if (deliveryType === 'DELIVERY') {
-        if (zoneValue === 'custom') {
-            deliveryCost = 0; // سيتم تحديده لاحقاً
-            document.getElementById('delivery-cost').innerText = "يحدد لاحقاً";
-        } else {
-            deliveryCost = parseFloat(zoneValue);
-            document.getElementById('delivery-cost').innerText = deliveryCost.toFixed(2) + " ج.م";
-        }
-    } else {
-        document.getElementById('delivery-cost').innerText = "0.00 ج.م";
-    }
-
-    const finalTotal = subtotal + deliveryCost;
-    document.getElementById('total-price').innerText = finalTotal.toFixed(2) + " ج.م";
-};
-
-/**
- * 4. دالة معالجة إرسال الطلب لقاعدة البيانات
- */
-// دالة معالجة إرسال الطلب لقاعدة البيانات
-// دالة معالجة إرسال الطلب لقاعدة البيانات
-// دالة معالجة إرسال الطلب لقاعدة البيانات
-// دالة معالجة إرسال الطلب لقاعدة البيانات
-async function handleOrderSubmit(e) {
-    e.preventDefault();
-    
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    if (cart.length === 0) {
-        alert("سلتك فارغة!");
-        return;
-    }
-
-    const deliveryType = document.getElementById('delivery-type').value;
-    const zoneValue = document.getElementById('delivery-zone').value;
-    const finalTotalText = document.getElementById('total-price').innerText;
-    const finalTotal = parseFloat(finalTotalText.replace(" ج.م", ""));
-
-    const addressInput = document.getElementById('cust-address');
-    
-    // --- الفحص الذكي للعنوان ---
-    // لو العميل طالب توصيل، ومكتبش عنوان، نوقفه ونطلب منه العنوان
-    if (deliveryType === 'DELIVERY') {
-        if (!addressInput || addressInput.value.trim() === '') {
-            alert("يرجى كتابة العنوان بالتفصيل لتوصيل الطلب!");
-            if (addressInput) addressInput.focus();
-            return; // وقف الإرسال
-        }
-    }
-
-    // تحديد العنوان النهائي بناءً على نوع الاستلام
-    const customerAddress = (deliveryType === 'PICKUP') 
-        ? 'استلام من المطبخ' 
-        : addressInput.value.trim();
-
-    // حساب عمولة التوصيل
-    let commission = 0;
-    if (deliveryType === 'DELIVERY') {
-        if (zoneValue !== 'custom') {
-            commission = parseFloat(zoneValue);
-        } else {
-            commission = 0;
-        }
-    }
-
-    // تجهيز بيانات الطلب وإرسال محتويات السلة للمطبخ
-    const orderData = {
-        customer_name: document.getElementById('cust-name').value,
-        customer_phone: document.getElementById('cust-phone').value,
-        customer_address: customerAddress,
-        total_amount: finalTotal,
-        delivery_commission: commission, 
-        status: 'PENDING',
-        order_code: 'S' + Math.floor(1000 + Math.random() * 9000),
-        items: cart, 
-        created_at: new Date().toISOString()
-    };
-
-    try {
-        const { error } = await window.supabaseClient
-            .from('orders')
-            .insert([orderData]);
-
-        if (error) throw error;
-
-        alert("تم استلام طلبك بنجاح يا فنان! 🥘\nكود الطلب الخاص بك هو: " + orderData.order_code);
-        
-        // مسح السلة وتصفير العداد
-        localStorage.removeItem('cart');
-        if (typeof updateCartCount === 'function') {
-            updateCartCount();
-        }
-
-        // التوجيه لصفحة التتبع
-        window.location.href = `track.html?code=${orderData.order_code}`;
-
-    } catch (err) {
-        console.error("Submission Error:", err);
-        alert("حدث خطأ أثناء إرسال الطلب: " + err.message);
-    }
-}
-
-/**
- * 5. حذف منتج من السلة
+ * 4. دالة حذف منتج من السلة
  */
 window.removeFromCart = (index) => {
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -194,92 +116,5 @@ window.removeFromCart = (index) => {
     renderCart(); // إعادة العرض فوراً
 };
 
-
-let appliedCoupon = null; // لتخزين بيانات الكوبون لو اتفعل
-
-// 1. دالة تطبيق الكوبون
-async function applyCoupon() {
-    const code = document.getElementById('coupon-input').value.trim().toUpperCase();
-    const msgEl = document.getElementById('coupon-msg');
-    const subtotal = parseFloat(document.getElementById('subtotal-price').innerText) || 0;
-
-    if (!code) return;
-
-    try {
-        // البحث عن الكوبون في Supabase
-        const { data: coupon, error } = await window.supabaseClient
-            .from('coupons')
-            .select('*')
-            .eq('code', code)
-            .eq('is_active', true)
-            .single();
-
-        if (error || !coupon) {
-            msgEl.innerText = "❌ الكوبون غير صحيح أو منتهي الصلاحية";
-            msgEl.style.color = "red";
-            removeCoupon();
-            return;
-        }
-
-        // التأكد من تاريخ الانتهاء
-        if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-            msgEl.innerText = "❌ هذا الكوبون انتهت صلاحيته";
-            msgEl.style.color = "red";
-            removeCoupon();
-            return;
-        }
-
-        // التأكد من الحد الأدنى للطلب
-        if (subtotal < coupon.min_order_amount) {
-            msgEl.innerText = `⚠️ يلزمك طلب بـ ${coupon.min_order_amount} ج.م لتفعيل الخصم`;
-            msgEl.style.color = "orange";
-            removeCoupon();
-            return;
-        }
-
-        // لو كله تمام، نحسب الخصم
-        appliedCoupon = coupon;
-        msgEl.innerText = "✅ تم تطبيق الخصم بنجاح!";
-        msgEl.style.color = "green";
-        updateTotalWithDelivery(); // إعادة حساب الإجمالي بالخصم
-
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-// 2. تعديل دالة الحساب لتشمل الخصم (عدلي الدالة الموجودة عندك لتصبح هكذا)
-window.updateTotalWithDelivery = () => {
-    const subtotal = parseFloat(document.getElementById('subtotal-price').innerText) || 0;
-    const deliveryType = document.getElementById('delivery-type').value;
-    const zoneValue = document.getElementById('delivery-zone').value;
-    
-    let deliveryCost = 0;
-    if (deliveryType === 'DELIVERY' && zoneValue !== 'custom') {
-        deliveryCost = parseFloat(zoneValue);
-    }
-
-    // حساب قيمة الخصم
-    let discountValue = 0;
-    if (appliedCoupon) {
-        if (appliedCoupon.discount_type === 'PERCENTAGE') {
-            discountValue = subtotal * (appliedCoupon.discount_value / 100);
-        } else {
-            discountValue = appliedCoupon.discount_value;
-        }
-        
-        document.getElementById('discount-display').style.display = 'flex';
-        document.getElementById('discount-amount').innerText = `-${discountValue.toFixed(2)} ج.م`;
-    } else {
-        document.getElementById('discount-display').style.display = 'none';
-    }
-
-    const finalTotal = subtotal + deliveryCost - discountValue;
-    document.getElementById('total-price').innerText = `${finalTotal.toFixed(2)} ج.م`;
-    document.getElementById('delivery-cost').innerText = `${deliveryCost.toFixed(2)} ج.م`;
-};
-
-function removeCoupon() {
-    appliedCoupon = null;
-    updateTotalWithDelivery();
-}
+/**
+ * 5. دالة التحكم في إظهار/إخ
