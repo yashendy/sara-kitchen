@@ -88,6 +88,22 @@
                         <div class="price-row" style="font-size: 1.3rem; margin-top: 10px;">
                             <strong>الإجمالي:</strong> <strong id="total-price" style="color: var(--admin-primary);">0.00 ج.م</strong>
                         </div>
+                        <div id="loyalty-box" style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px dashed #f59e0b;">
+    <h4 style="margin-top: 0; color: #d97706;">⭐ هل أنت عميل مميز؟</h4>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <input type="tel" id="loyalty-phone" placeholder="أدخل رقم هاتفك للتحقق من نقاطك" class="form-control" style="flex: 1; padding: 8px;">
+        <button type="button" onclick="checkLoyaltyPoints()" class="btn-primary" style="background: #d97706; padding: 8px 15px; border:none; border-radius:5px; color:white; cursor:pointer;">تحقق</button>
+    </div>
+    <p id="loyalty-msg" style="font-size: 0.85rem; margin-top: 10px; font-weight: bold;"></p>
+    
+    <div id="use-points-section" style="display: none; margin-top: 10px;">
+        <button type="button" onclick="applyLoyaltyPoints()" style="width: 100%; background: #10b981; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">استبدال النقاط بخصم 💰</button>
+    </div>
+</div>
+
+<div id="loyalty-discount-row" style="display: none; color: #10b981; font-weight: bold; margin: 10px 0;">
+    ⭐ خصم النقاط: <span id="loyalty-discount-val" dir="ltr">0</span> ج.م
+</div>
                         <button type="submit" class="btn btn-primary btn-block" style="margin-top: 15px; width: 100%;">تأكيد الطلب 🥘</button>
                     </div>
                 </form>
