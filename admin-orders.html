@@ -156,6 +156,34 @@
         </div>
     </div>
 
+    <div id="print-section">
+    <div class="receipt-header">
+        <h2>🍲 مطبخ سارة</h2>
+        <p>طعم البيوت الأصلي</p>
+        <h3 id="p-order-code">#S1234</h3>
+        <p id="p-date"></p>
+    </div>
+    <div class="receipt-body">
+        <p><strong>العميل:</strong> <span id="p-cust-name"></span></p>
+        <p><strong>العنوان:</strong> <span id="p-cust-addr"></span></p>
+        <p><strong>الموبايل:</strong> <span id="p-cust-phone"></span></p>
+        <table class="receipt-table">
+            <thead>
+                <tr>
+                    <th>الصنف</th>
+                    <th>الكمية</th>
+                    <th>السعر</th>
+                </tr>
+            </thead>
+            <tbody id="p-items"></tbody>
+        </table>
+    </div>
+    <div class="receipt-footer">
+        <h3>الإجمالي: <span id="p-total"></span> ج.م</h3>
+        <p>شكراً لثقتكم في مطبخ سارة! ❤️</p>
+    </div>
+</div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
