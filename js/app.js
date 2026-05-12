@@ -1,175 +1,174 @@
 // js/app.js - المحرك الرئيسي لمنصة مطبخ سارة
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. التحقق من وجود الإعدادات
     if (!window.APP_CONFIG) {
-        console.error("❌ خطأ: ملف config.js غير موجود أو لم يتم تحميله بشكل صحيح.");
+        console.error("❌ خطأ: ملف config.js غير موجود أو لم يتم تحميله.");
         return;
     }
 
-    // 2. تهيئة اتصال Supabase
+    // تهيئة اتصال Supabase
     const { url, anonKey } = window.APP_CONFIG.supabase;
     if (typeof supabase !== 'undefined') {
         window.supabaseClient = supabase.createClient(url, anonKey);
         console.log("🚀 تم تفعيل اتصال SupabaseClient بنجاح.");
-    } else {
-        console.error("❌ خطأ: مكتبة Supabase JS لم يتم تحميلها.");
     }
 
-    // 3. تحديث البيانات العامة والعداد عند تحميل الصفحة
     updateGlobalUI();
     window.updateCartCount(); 
+    setupDynamicNavbar(); // 👈 تفعيل الشريط الذكي
 });
 
-// --- وظائف السلة (إضافة وتحديث العداد) ---
-
-// 1. وظيفة إضافة منتج للسلة
-window.addToCart = (id, name, price, image) => {
-    // تأكدي أننا نستخدم المفتاح 'cart' دائماً لتوحيد البيانات
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    
-    const existingItem = cart.find(item => item.id === id);
-    if (existingItem) {
-        existingItem.quantity += 1;
-    } else {
-        cart.push({ 
-            id: id, 
-            name: name, 
-            price: parseFloat(price), 
-            image: image, 
-            quantity: 1 
-        });
-    }
-    
-    localStorage.setItem('cart', JSON.stringify(cart));
-    
-    // تحديث العداد فوراً بعد الإضافة
-    window.updateCartCount();
-    
-    window.showAlert(`تم إضافة ${name} للسلة بنجاح ✅`);
-};
-
-// 2. وظيفة تحديث رقم الأصناف في الهيدر (تعديل حيوي)
-window.updateCartCount = () => {
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    
-    // حساب إجمالي عدد القطع (Quantity) وليس فقط عدد الأنواع
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    
-    // أولاً: التحديث من خلال الـ ID الصريح (cart-count) الذي وضعتِه في HTML
-    const countElement = document.getElementById('cart-count');
-    if (countElement) {
-        countElement.textContent = totalItems;
-    }
-
-    // ثانياً: التحديث الاحتياطي لأي روابط تحمل كلاس .cart-link
-    const cartLinks = document.querySelectorAll('.cart-link');
-    cartLinks.forEach(link => {
-        // إذا كان الرابط لا يحتوي على سبان بالداخل، نحدث النص بجانب الإيموجي
-        const spanInside = link.querySelector('span');
-        if (!spanInside) {
-            link.innerHTML = `السلة 🛒 (${totalItems})`;
-        }
-    });
-};
-
-// --- وظائف التنسيق والواجهة ---
-
-// وظيفة لتنسيق الأسعار حسب العملة المختارة في الإعدادات
-window.formatCurrency = (amount) => {
-    const { label } = window.APP_CONFIG.currency;
-    return `${parseFloat(amount).toFixed(2)} ${label}`;
-};
-
-// وظيفة لتحديث البيانات العامة (مثل رقم التليفون في الفوتر)
-function updateGlobalUI() {
-    const phoneElement = document.getElementById('contact-phone');
-    if (phoneElement) {
-        phoneElement.textContent = window.APP_CONFIG.contact.phone;
-    }
-
-
-    // js/app.js
-
-// 1. دالة تسجيل الدخول (للكل: أدمن، مندوب، عميل)
+// ==========================================
+// 1. نظام الدخول الموحد (أدمن - مندوب - عميل)
+// ==========================================
 window.handleLogin = async (phone, password) => {
     try {
-        // البحث عن المستخدم برقم الهاتف وكلمة المرور
         const { data: user, error } = await window.supabaseClient
             .from('users')
             .select('*')
             .eq('phone', phone)
-            .eq('password', password) // يفضل مستقبلاً استخدام تشفير
+            .eq('password', password) // ربطناها بحقل password اللي في الداتا بيز بتاعتك
             .single();
 
-        if (error || !user) {
-            throw new Error("رقم الهاتف أو كلمة المرور غير صحيحة");
-        }
+        if (error || !user) throw new Error("رقم الهاتف أو كلمة المرور غير صحيحة");
+        if (!user.is_active) throw new Error("هذا الحساب غير مفعل حالياً.");
 
-        // حفظ بيانات الجلسة في المتصفح
+        // حفظ الجلسة
         sessionStorage.setItem('is_logged_in', 'true');
         sessionStorage.setItem('user_role', user.role);
         sessionStorage.setItem('user_id', user.id);
-        sessionStorage.setItem('user_full_name', user.full_name);
+        sessionStorage.setItem('user_phone', user.phone);
+        sessionStorage.setItem('user_full_name', user.full_name || 'عميل مميز');
 
-        // التوجيه الذكي بناءً على الرتبة (Role)
+        // التوجيه الذكي
         if (user.role === 'ADMIN') {
             sessionStorage.setItem('is_admin', 'true');
             window.location.href = 'admin-dashboard.html';
         } else if (user.role === 'DRIVER') {
-            window.location.href = 'driver-orders.html'; // شاشة المندوب
+            window.location.href = 'driver-orders.html';
         } else {
-            window.location.href = 'index.html'; // العميل يرجع للرئيسية
+            window.location.href = 'index.html';
         }
-
     } catch (err) {
         alert(err.message);
     }
 };
 
-// 2. دالة إنشاء حساب جديد (للعملاء فقط)
 window.handleRegister = async (userData) => {
     try {
-        // التأكد أولاً أن الرقم غير مسجل
-        const { data: existing } = await window.supabaseClient
-            .from('users')
-            .select('id')
-            .eq('phone', userData.phone)
-            .single();
-
+        const { data: existing } = await window.supabaseClient.from('users').select('id').eq('phone', userData.phone).single();
         if (existing) throw new Error("هذا الرقم مسجل بالفعل، جرب تسجيل الدخول.");
 
-        // إضافة المستخدم الجديد برتبة CUSTOMER
-        const { error } = await window.supabaseClient
-            .from('users')
-            .insert([{
-                full_name: userData.name,
-                phone: userData.phone,
-                password: userData.password,
-                address: userData.address,
-                role: 'CUSTOMER',
-                loyalty_points: 0
-            }]);
+        const { error } = await window.supabaseClient.from('users').insert([{
+            full_name: userData.name,
+            phone: userData.phone,
+            password: userData.password,
+            address: userData.address,
+            role: 'CUSTOMER',
+            is_active: true,
+            loyalty_points: 0
+        }]);
 
         if (error) throw error;
-
-        alert("تم إنشاء حسابك بنجاح يا فنان! 🎉 يمكنك الآن تسجيل الدخول.");
-        window.location.reload(); // لإرجاعه لشاشة الدخول
-
+        alert("تم إنشاء حسابك بنجاح! 🎉 يمكنك الآن تسجيل الدخول.");
+        window.location.reload(); 
     } catch (err) {
         alert(err.message);
     }
 };
 
-// 3. دالة تسجيل الخروج (Logout)
 window.handleLogout = () => {
-    sessionStorage.clear(); // مسح كل بيانات الجلسة
-    alert("تم تسجيل الخروج بنجاح. ننتظرك مرة أخرى! 👋");
+    sessionStorage.clear();
+    alert("تم تسجيل الخروج بنجاح 👋");
     window.location.href = 'index.html';
 };
+
+// ==========================================
+// 2. الشريط العلوي الذكي (Dynamic Navbar)
+// ==========================================
+function setupDynamicNavbar() {
+    const isLoggedIn = sessionStorage.getItem('is_logged_in') === 'true';
+    const userRole = sessionStorage.getItem('user_role');
+    const userName = sessionStorage.getItem('user_full_name');
+    
+    const navLinksContainer = document.querySelector('.nav-links');
+    if (!navLinksContainer) return;
+
+    if (isLoggedIn) {
+        if (userRole === 'ADMIN') {
+            navLinksContainer.innerHTML = `
+                <a href="index.html">الرئيسية</a>
+                <span style="color: #475569; margin: 0 10px;">|</span>
+                <a href="admin-dashboard.html">لوحة الأدمن</a>
+                <a href="admin-orders.html">إدارة الطلبات</a>
+                <a href="admin-items.html">الأصناف</a>
+                <a href="admin-offers.html">العروض</a>
+                <a href="#" onclick="window.handleLogout()" style="color:#ef4444; font-weight:bold;">خروج 🚪</a>
+            `;
+        } else if (userRole === 'DRIVER') {
+            navLinksContainer.innerHTML = `
+                <a href="driver-orders.html">طلبات التوصيل 🚚</a>
+                <a href="#" onclick="window.handleLogout()" style="color:#ef4444; font-weight:bold;">خروج 🚪</a>
+            `;
+        } else {
+            // عميل
+            navLinksContainer.innerHTML = `
+                <a href="index.html">الرئيسية</a>
+                <a href="menu.html">القائمة</a>
+                <a href="cart.html" class="cart-link">السلة <span id="cart-count">0</span> 🛒</a>
+                <a href="track.html">تتبع طلباتي</a>
+                <span style="color: #475569; margin: 0 10px;">|</span>
+                <span style="color: var(--primary); font-weight:bold;">أهلاً، ${userName.split(' ')[0]} 👋</span>
+                <a href="#" onclick="window.handleLogout()" style="color:#ef4444; font-weight:bold;">خروج 🚪</a>
+            `;
+            window.updateCartCount(); 
+        }
+    } else {
+        // زائر غير مسجل
+        navLinksContainer.innerHTML = `
+            <a href="index.html">الرئيسية</a>
+            <a href="menu.html">القائمة</a>
+            <a href="cart.html" class="cart-link">السلة <span id="cart-count">0</span> 🛒</a>
+            <a href="track.html">تتبع طلبك</a>
+            <span style="color: #475569; margin: 0 10px;">|</span>
+            <a href="login.html" style="background:var(--primary); color:white; padding:5px 15px; border-radius:20px;">تسجيل الدخول</a>
+        `;
+        window.updateCartCount();
+    }
 }
 
-// وظيفة لعرض التنبيهات
-window.showAlert = (message) => {
-    alert(message); 
+// ==========================================
+// 3. وظائف السلة والتنسيق
+// ==========================================
+window.addToCart = (id, name, price, image) => {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const existingItem = cart.find(item => item.id === id);
+    if (existingItem) existingItem.quantity += 1;
+    else cart.push({ id, name, price: parseFloat(price), image, quantity: 1 });
+    
+    localStorage.setItem('cart', JSON.stringify(cart));
+    window.updateCartCount();
+    window.showAlert(`تم إضافة ${name} للسلة بنجاح ✅`);
 };
+
+window.updateCartCount = () => {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const countElement = document.getElementById('cart-count');
+    if (countElement) countElement.textContent = totalItems;
+};
+
+window.formatCurrency = (amount) => {
+    if(!window.APP_CONFIG) return `${amount} ج.م`;
+    const { label } = window.APP_CONFIG.currency;
+    return `${parseFloat(amount).toFixed(2)} ${label}`;
+};
+
+function updateGlobalUI() {
+    const phoneElement = document.getElementById('contact-phone');
+    if (phoneElement && window.APP_CONFIG) {
+        phoneElement.textContent = window.APP_CONFIG.contact.phone;
+    }
+}
+
+window.showAlert = (message) => alert(message);
