@@ -1,6 +1,7 @@
 // js/admin-orders.js
 
 let selectedOrderId = null;
+let allOrders = []; // 👈 هذا هو السطر الذي كان يسبب مشكلة الطباعة!
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadOrders();
@@ -12,7 +13,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadOrders() {
     try {
-        // السحر هنا: بنجيب الأوردر ومعاه اسم المندوب المرتبط بيه
         const { data: orders, error } = await window.supabaseClient
             .from('orders')
             .select(`
@@ -22,15 +22,17 @@ async function loadOrders() {
             .order('created_at', { ascending: false });
 
         if (error) throw error;
+        
+        allOrders = orders; // 👈 حفظ الطلبات في المتغير لتعمل الطباعة والواتساب بشكل صحيح
         renderBoard(orders);
     } catch (err) {
         console.error("Error loading orders:", err);
     }
 }
+
 function renderBoard(orders) {
     const statuses = ['PENDING', 'PREPARING', 'WITH_DRIVER', 'DELIVERED'];
     
-    // تصفير القوائم
     statuses.forEach(status => {
         const listEl = document.getElementById(`list-${status}`);
         const countEl = document.getElementById(`count-${status}`);
@@ -42,11 +44,9 @@ function renderBoard(orders) {
         const list = document.getElementById(`list-${order.status}`);
         if (!list) return;
 
-        // تحديث العداد
         const countEl = document.getElementById(`count-${order.status}`);
         countEl.innerText = parseInt(countEl.innerText) + 1;
 
-        // تجهيز عرض الأصناف (المكونات)
         let itemsHtml = '';
         if (order.items && Array.isArray(order.items)) {
             itemsHtml = order.items.map(item => `
@@ -59,13 +59,11 @@ function renderBoard(orders) {
 
         const time = new Date(order.created_at).toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'});
 
-        // 👈 التعديل الأول: محاولة استخراج اسم المندوب من الربط بقاعدة البيانات
         let driverName = '';
         if (order.delivery_drivers && order.delivery_drivers.name) {
             driverName = order.delivery_drivers.name;
         }
 
-        // تجهيز شكل المندوب لو كان موجود
         const driverHtml = driverName ? 
             `<div style="margin-top: 5px; color: #8b5cf6; font-weight: bold; font-size: 0.85rem;">
                 🛵 المندوب: ${driverName}
@@ -74,7 +72,6 @@ function renderBoard(orders) {
         const card = document.createElement('div');
         card.className = `order-card status-${order.status}`;
         
-        // 👈 التعديل الثاني: إضافة ${driverHtml} تحت عنوان العميل
         card.innerHTML = `
             <div class="card-header">
                 <span class="order-code">${order.order_code}</span>
@@ -100,7 +97,6 @@ function renderBoard(orders) {
 }
 
 function renderActionButtons(order) {
-    // 1. زرار الطباعة: متاح دائماً ليتمكن المطبخ من طباعة البون في أي وقت
     const printBtn = `<button class="btn-status" 
                         style="background:#475569; color:white; max-width:45px; display:flex; align-items:center; justify-content:center;" 
                         onclick="printOrder(${order.id})" 
@@ -110,7 +106,6 @@ function renderActionButtons(order) {
     
     let actionBtn = "";
 
-    // 2. تحديد زرار الحالة بناءً على وضع الأوردر الحالي
     if (order.status === 'PENDING') {
         actionBtn = `<button class="btn-status btn-primary" onclick="updateStatus(${order.id}, 'PREPARING')">بدء التحضير 👨‍🍳</button>`;
     } else if (order.status === 'PREPARING') {
@@ -121,7 +116,6 @@ function renderActionButtons(order) {
         actionBtn = `<span style="color:#10b981; font-size:0.8rem; font-weight:bold;">✅ طلب مكتمل</span>`;
     }
 
-    // 3. دمج الزرار في حاوية واحدة (Flex) لضمان التنسيق
     return `
         <div style="display:flex; gap:8px; width:100%; align-items:center;">
             ${printBtn}
@@ -130,6 +124,36 @@ function renderActionButtons(order) {
     `;
 }
 
+// === دوال مساعدة للواتساب ===
+
+// تحويل تفاصيل الطلب لنص منسق للواتساب
+function formatItemsForWhatsApp(itemsJson) {
+    let itemsText = "";
+    if (itemsJson) {
+        let itemsArray = itemsJson;
+        if (typeof itemsArray === 'string') {
+            try { itemsArray = JSON.parse(itemsArray); } catch(e){}
+        }
+        if (Array.isArray(itemsArray)) {
+            itemsText = itemsArray.map(item => `▪️ ${item.quantity}x ${item.name}`).join('\n');
+        }
+    }
+    return itemsText || "بدون تفاصيل";
+}
+
+// ضبط رقم الهاتف ليناسب كود الدولة (مصر أو الكويت)
+function formatPhoneNumber(phone) {
+    if(!phone) return "";
+    let p = phone.replace(/\D/g, ''); // إزالة أي مسافات أو رموز
+    if (p.startsWith('01') && p.length === 11) {
+        p = '2' + p; // كود مصر
+    } else if (p.length === 8 && (p.startsWith('9') || p.startsWith('6') || p.startsWith('5'))) {
+        p = '965' + p; // كود الكويت
+    }
+    return p;
+}
+
+// === تحديث الحالة وإرسال واتساب للعميل ===
 async function updateStatus(id, newStatus) {
     try {
         const { error } = await window.supabaseClient
@@ -138,6 +162,23 @@ async function updateStatus(id, newStatus) {
             .eq('id', id);
 
         if (error) throw error;
+        
+        // 👈 إضافة ميزة: رسالة الواتساب للعميل عند بدء التحضير
+        if (newStatus === 'PREPARING') {
+            const order = allOrders.find(o => o.id === id);
+            if (order && order.customer_phone) {
+                let itemsList = formatItemsForWhatsApp(order.items);
+                let msg = `أهلاً بك في مطبخ سارة 🍲\n`;
+                msg += `طلبك رقم #${order.order_code} جاري تحضيره الآن! 👨‍🍳\n\n`;
+                msg += `🛒 تفاصيل الطلب:\n${itemsList}\n\n`;
+                msg += `💰 الإجمالي: ${order.total_amount} ج.م\n`;
+                msg += `شكراً لاختيارك مطبخ سارة ❤️`;
+                
+                let waUrl = `https://wa.me/${formatPhoneNumber(order.customer_phone)}?text=${encodeURIComponent(msg)}`;
+                window.open(waUrl, '_blank'); // فتح الواتساب في نافذة جديدة
+            }
+        }
+
         await loadOrders();
     } catch (err) {
         alert("خطأ في تحديث الحالة");
@@ -147,7 +188,6 @@ async function updateStatus(id, newStatus) {
 // إدارة المندوبين
 async function loadDrivers() {
     try {
-        // التعديل هنا: استخدام الجدول الصحيح بناءً على الهيكل
         const { data, error } = await window.supabaseClient
             .from('delivery_drivers')
             .select('*');
@@ -160,9 +200,9 @@ async function loadDrivers() {
         select.innerHTML = '<option value="">اختر المندوب...</option>';
         if (data && data.length > 0) {
             data.forEach(d => {
-                // بنعرض اسم المندوب (أو اليوزرنيم) وبنخزن الـ ID
                 const driverName = d.name || d.username || d.full_name || `مندوب رقم ${d.id}`;
-                select.innerHTML += `<option value="${d.id}">${driverName}</option>`;
+                // 👈 إضافة رقم الهاتف الخاص بالمندوب كمعلومة مخفية
+                select.innerHTML += `<option value="${d.id}" data-phone="${d.phone || ''}">${driverName}</option>`;
             });
         }
     } catch (err) {
@@ -179,9 +219,12 @@ function closeDriverModal() {
     document.getElementById('driverModal').hidden = true;
 }
 
+// === تعيين المندوب وإرسال واتساب للمندوب ===
 async function confirmAssignDriver() {
     const driverSelect = document.getElementById('driverSelect');
     const driverId = driverSelect.value;
+    const driverOption = driverSelect.options[driverSelect.selectedIndex];
+    const driverPhone = driverOption.getAttribute('data-phone');
 
     if (!driverId) return alert("يرجى اختيار مندوب أولاً");
 
@@ -190,27 +233,44 @@ async function confirmAssignDriver() {
             .from('orders')
             .update({ 
                 status: 'WITH_DRIVER',
-                driver_id: parseInt(driverId) // التعديل هنا: بنحفظ رقم المندوب مش اسمه
+                driver_id: parseInt(driverId) 
             })
             .eq('id', selectedOrderId);
 
         if (error) throw error;
         
+        // 👈 إضافة ميزة: رسالة الواتساب للمندوب عند استلام الطلب
+        const order = allOrders.find(o => o.id === selectedOrderId);
+        if (order && driverPhone) {
+            let itemsList = formatItemsForWhatsApp(order.items);
+            let msg = `🔔 أوردر جديد للتوصيل يا بطل 🛵\n\n`;
+            msg += `🔖 رقم الطلب: #${order.order_code}\n`;
+            msg += `👤 العميل: ${order.customer_name}\n`;
+            msg += `📞 موبايل العميل: ${order.customer_phone}\n`;
+            msg += `📍 العنوان: ${order.customer_address || 'استلام من المطبخ'}\n\n`;
+            msg += `🛒 تفاصيل الأوردر:\n${itemsList}\n\n`;
+            msg += `💰 المطلوب تحصيله: ${order.total_amount} ج.م\n`;
+            msg += `توصل بالسلامة!`;
+
+            let waUrl = `https://wa.me/${formatPhoneNumber(driverPhone)}?text=${encodeURIComponent(msg)}`;
+            window.open(waUrl, '_blank'); // فتح الواتساب للمندوب
+        } else if (!driverPhone) {
+            alert("تم إسناد الطلب بنجاح، لكن لم يتم العثور على رقم هاتف للمندوب لإرسال الواتساب.");
+        }
+
         closeDriverModal();
-        await loadOrders(); // تحديث اللوحة فوراً
+        await loadOrders(); 
     } catch (err) {
         console.error("خطأ أثناء تعيين المندوب:", err);
         alert("حدث خطأ أثناء تعيين المندوب");
     }
 }
 
+// === دالة الطباعة (تعمل بنجاح الآن) ===
 async function printOrder(orderId) {
-    // 1. جلب بيانات الأوردر من المصفوفة المحفوظة عندنا
-    // ملاحظة: تأكدي أن loadOrders تحفظ البيانات في متغير اسمه allOrders
     const order = allOrders.find(o => o.id === orderId);
     if (!order) return;
 
-    // 2. تعبئة بيانات الفاتورة في القسم المخفي
     document.getElementById('p-order-code').innerText = `رقم الطلب: ${order.order_code}`;
     document.getElementById('p-date').innerText = new Date(order.created_at).toLocaleString('ar-EG');
     document.getElementById('p-cust-name').innerText = order.customer_name;
@@ -223,19 +283,23 @@ async function printOrder(orderId) {
     
     if (order.items) {
         let items = order.items;
-        if (typeof items === 'string') items = JSON.parse(items);
+        if (typeof items === 'string') {
+            try { items = JSON.parse(items); } catch(e){}
+        }
         
-        items.forEach(item => {
-            itemsBody.innerHTML += `
-                <tr>
-                    <td>${item.name}</td>
-                    <td>${item.quantity}</td>
-                    <td>${(item.price * item.quantity)} ج</td>
-                </tr>
-            `;
-        });
+        if (Array.isArray(items)) {
+            items.forEach(item => {
+                itemsBody.innerHTML += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${(item.price * item.quantity)} ج</td>
+                    </tr>
+                `;
+            });
+        }
     }
 
-    // 3. أمر الطباعة
+    // أمر الطباعة
     window.print();
 }
