@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سلة المشتريات | مطبخ سارة</title>
+    <link rel="icon" type="image/png" href="logo-sara-kitchen.png">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/admin-dashboard.css"> <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -79,6 +80,9 @@
                     <hr>
                     <div class="total-area">
                         <div class="price-row"><span>المشتريات:</span> <span id="subtotal-price">0.00 ج.م</span></div>
+                        <div id="bulk-discount-row" style="display: none; color: #10b981; font-weight: bold; margin: 10px 0;">
+                        🎉 خصم كبار العملاء: <span id="bulk-discount-val" dir="ltr">0</span> ج.م
+                        </div>
                         <div class="price-row" id="delivery-row"><span>التوصيل:</span> <span id="delivery-cost">30.00 ج.م</span></div>
                         <div class="price-row discount-row" id="discount-display"><span>خصم الكوبون:</span> <span id="discount-amount">-0.00 ج.م</span></div>
                         <div class="price-row" style="font-size: 1.3rem; margin-top: 10px;">
