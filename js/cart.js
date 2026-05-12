@@ -198,6 +198,19 @@ window.updateTotalWithDelivery = () => {
     }
 
     let totalDiscounts = bulkDiscountValue + couponDiscountValue;
+    // -- حساب خصم النقاط --
+    const loyaltyRow = document.getElementById('loyalty-discount-row');
+    const loyaltyVal = document.getElementById('loyalty-discount-val');
+    
+    if (isPointsApplied && loyaltyDiscountValue > 0) {
+        if(loyaltyRow) loyaltyRow.style.display = 'flex';
+        if(loyaltyVal) loyaltyVal.innerText = `-${loyaltyDiscountValue.toFixed(2)} ج.م`;
+    } else {
+        if(loyaltyRow) loyaltyRow.style.display = 'none';
+    }
+
+    // تعديل إجمالي الخصومات ليصبح: خصم VIP + كوبون + نقاط الولاء
+    let totalDiscounts = bulkDiscountValue + couponDiscountValue + (isPointsApplied ? loyaltyDiscountValue : 0);
     let finalTotal = (subtotal - totalDiscounts) + deliveryCost;
 
     if(finalTotal < 0) finalTotal = 0; 
