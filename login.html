@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تسجيل الدخول - مطبخ سارة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css" />
+    <style>
+        :root { --soft-orange: #fff4e1; --deep-orange: #ff9f43; --soft-gray: #f8fafc; }
+        body.login-page { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, var(--soft-orange) 0%, #fff 100%); display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 20px; }
+        .login-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(255, 159, 67, 0.15); max-width: 400px; width: 100%; text-align: center; transition: transform 0.3s ease; }
+        .login-card:hover { transform: translateY(-5px); }
+        .login-logo { font-size: 2.5rem; color: var(--secondary); margin-bottom: 20px; font-weight: 800; }
+        .login-tabs { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 30px; }
+        .tab-btn { flex: 1; padding: 10px; background: none; border: none; cursor: pointer; font-size: 1.1rem; font-weight: 600; color: #64748b; transition: all 0.3s; }
+        .tab-btn.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
+        .form-input-group { position: relative; margin-bottom: 20px; text-align: right; }
+        .form-input-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #475569; font-size: 0.9rem; }
+        .form-input { width: 100%; padding: 12px 15px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: 'Cairo', sans-serif; font-size: 1rem; transition: all 0.3s; }
+        .form-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.1); }
+        .btn-wow { width: 100%; background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%); color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.2rem; font-weight: 700; cursor: pointer; font-family: 'Cairo', sans-serif; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn-wow:hover { box-shadow: 0 6px 12px rgba(219, 112, 102, 0.3); transform: scale(1.02); }
+        .redirect-link { display: block; margin-top: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; }
+        .redirect-link:hover { color: var(--secondary); text-decoration: underline; }
+        #register-form { display: none; }
+    </style>
+</head>
+<body class="login-page">
+    <div class="login-card">
+        <div class="login-logo">🍲 مطبخ سارة</div>
+
+        <div class="login-tabs">
+            <button class="tab-btn active" onclick="switchForm('login')" type="button">تسجيل دخول</button>
+            <button class="tab-btn" onclick="switchForm('register')" type="button">إنشاء حساب</button>
+        </div>
+
+        <form id="login-form">
+            <div class="form-input-group">
+                <label for="login-phone">رقم الهاتف</label>
+                <input type="tel" id="login-phone" class="form-input" placeholder="01xxxxxxxxx" required>
+            </div>
+            <div class="form-input-group">
+                <label for="login-password">كلمة المرور</label>
+                <input type="password" id="login-password" class="form-input" required>
+            </div>
+            <button type="submit" class="btn-wow">دخول آمن 🔒</button>
+            <a href="index.html" class="redirect-link">تصفح كزائر سريع 🚀</a>
+        </form>
+
+        <form id="register-form">
+            <div class="form-input-group">
+                <label for="register-name">الاسم الثلاثي</label>
+                <input type="text" id="register-name" class="form-input" required>
+            </div>
+            <div class="form-input-group">
+                <label for="register-phone">رقم الهاتف</label>
+                <input type="tel" id="register-phone" class="form-input" required>
+            </div>
+            <div class="form-input-group">
+                <label for="register-address">العنوان بالتفصيل</label>
+                <input type="text" id="register-address" class="form-input" required>
+            </div>
+            <div class="form-input-group">
+                <label for="register-password">كلمة المرور (6 أحرف/أرقام)</label>
+                <input type="password" id="register-password" class="form-input" required minlength="6">
+            </div>
+            <button type="submit" class="btn-wow" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">إنشاء حساب ⭐</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    
+    <script>
+        function switchForm(formType) {
+            document.getElementById('login-form').style.display = formType === 'login' ? 'block' : 'none';
+            document.getElementById('register-form').style.display = formType === 'register' ? 'block' : 'none';
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs[0].classList.toggle('active', formType === 'login');
+            tabs[1].classList.toggle('active', formType === 'register');
+        }
+
+        // ربط الزراير بالدوال اللي في app.js
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            window.handleLogin(document.getElementById('login-phone').value, document.getElementById('login-password').value);
+        });
+
+        document.getElementById('register-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            window.handleRegister({
+                name: document.getElementById('register-name').value,
+                phone: document.getElementById('register-phone').value,
+                address: document.getElementById('register-address').value,
+                password: document.getElementById('register-password').value
+            });
+        });
+    </script>
+</body>
+</html>
