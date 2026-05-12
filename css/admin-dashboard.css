@@ -271,3 +271,90 @@ select:focus {
   border-top: 1px solid #e2e8f0;
   border-radius: 0 0 16px 16px;
 }
+
+/* =========================================
+   لوحة الكانبان (Kanban Board) لصفحة الطلبات
+========================================= */
+.kanban-container {
+    display: flex;
+    gap: 15px;
+    padding: 10px;
+    overflow-x: auto; /* للسماح بالتمرير الأفقي على الموبايل */
+    height: calc(100vh - 120px);
+    align-items: flex-start;
+}
+
+.kanban-column {
+    background: #e2e8f0;
+    min-width: 300px; /* عرض العمود على الموبايل */
+    max-width: 300px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+}
+
+.column-header {
+    padding: 15px;
+    background: #0f172a;
+    color: white;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+}
+
+.column-count {
+    background: var(--admin-primary);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+}
+
+.order-list {
+    padding: 10px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+/* تنسيق كارت الأوردر */
+.order-card {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-right: 5px solid #cbd5e1;
+    transition: transform 0.2s;
+}
+
+.order-card:active { transform: scale(0.98); }
+
+.card-header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px; }
+.order-code { font-weight: bold; color: var(--admin-primary); }
+.order-time { font-size: 0.75rem; color: #64748b; }
+
+.customer-info { margin-bottom: 10px; }
+.customer-name { font-weight: 700; display: block; }
+.customer-addr { font-size: 0.85rem; color: #475569; display: block; }
+
+.items-summary {
+    background: #f8fafc;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+}
+
+.item-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+
+.card-footer { display: flex; gap: 10px; margin-top: 10px; }
+.btn-status { flex: 1; padding: 8px; font-size: 0.8rem; border-radius: 6px; cursor: pointer; border: none; font-weight: bold; }
+
+/* ألوان الحالات */
+.status-PENDING { border-right-color: #f59e0b; }
+.status-PREPARING { border-right-color: #3b82f6; }
+.status-WITH_DRIVER { border-right-color: #8b5cf6; }
+.status-DELIVERED { border-right-color: #10b981; }
