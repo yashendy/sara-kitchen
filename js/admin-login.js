@@ -50,3 +50,24 @@ document.getElementById('admin-login-form').addEventListener('submit', async (e)
         alert("حدث خطأ في الاتصال بقاعدة البيانات.");
     }
 });
+
+
+// ربط نموذج الدخول
+document.getElementById('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const phone = document.getElementById('login-phone').value;
+    const pass = document.getElementById('login-password').value;
+    handleLogin(phone, pass);
+});
+
+// ربط نموذج التسجيل
+document.getElementById('register-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const userData = {
+        name: document.getElementById('register-name').value,
+        phone: document.getElementById('register-phone').value,
+        address: document.getElementById('register-address').value,
+        password: document.getElementById('register-password').value
+    };
+    handleRegister(userData);
+});
