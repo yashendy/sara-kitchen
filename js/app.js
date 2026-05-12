@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!window.APP_CONFIG) {
-        console.error("❌ خطأ: ملف config.js غير موجود أو لم يتم تحميله.");
+        console.error("❌ خطأ: ملف config.js غير موجود.");
         return;
     }
 
@@ -14,8 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updateGlobalUI();
-    window.updateCartCount(); 
-    setupDynamicNavbar(); // 👈 تفعيل الشريط الذكي
+    if (typeof window.updateCartCount === 'function') window.updateCartCount(); 
+    setupDynamicNavbar(); // تفعيل الشريط الذكي
 });
 
 // ==========================================
@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 window.handleLogin = async (phone, password) => {
     try {
-        // استخدام maybeSingle يمنع خطأ 406 لو الرقم مش موجود
         const { data: user, error } = await window.supabaseClient
             .from('users')
             .select('*')
@@ -31,12 +30,8 @@ window.handleLogin = async (phone, password) => {
             .maybeSingle();
 
         if (error) throw new Error("حدث خطأ في الاتصال بقاعدة البيانات.");
-        
-        if (!user) {
-            throw new Error("رقم الهاتف غير مسجل لدينا، يرجى إنشاء حساب.");
-        }
+        if (!user) throw new Error("رقم الهاتف غير مسجل لدينا، يرجى إنشاء حساب.");
 
-        // فحص كلمة المرور (سواء كانت في خانة password أو password_hash)
         if (user.password !== password && user.password_hash !== password) {
             throw new Error("كلمة المرور غير صحيحة ❌");
         }
@@ -60,25 +55,22 @@ window.handleLogin = async (phone, password) => {
             window.location.href = 'index.html';
         }
     } catch (err) {
-        alert(err.message); // هيعرض الرسالة للمستخدم في نافذة منبثقة بدل كونسول المتصفح
+        alert(err.message);
     }
 };
 
+// ==========================================
+// 2. إنشاء حساب جديد للعميل
+// ==========================================
 window.handleRegister = async (userData) => {
     try {
-        const { data: existing } = await window.supabaseClient
-            .from('users')
-            .select('id')
-            .eq('phone', userData.phone)
-            .maybeSingle();
-            
+        const { data: existing } = await window.supabaseClient.from('users').select('id').eq('phone', userData.phone).maybeSingle();
         if (existing) throw new Error("هذا الرقم مسجل بالفعل، جرب تسجيل الدخول.");
 
-        // حفظنا الباسورد في الخانتين عشان نتفادى قيود قاعدة البيانات (NOT NULL)
         const { error } = await window.supabaseClient.from('users').insert([{
             full_name: userData.name,
             phone: userData.phone,
-            password_hash: userData.password, 
+            password_hash: userData.password,
             password: userData.password,
             address: userData.address,
             role: 'CUSTOMER',
@@ -95,12 +87,21 @@ window.handleRegister = async (userData) => {
 };
 
 // ==========================================
-// 2. الشريط العلوي الذكي (Dynamic Navbar)
+// 3. تسجيل الخروج
+// ==========================================
+window.handleLogout = () => {
+    sessionStorage.clear();
+    alert("تم تسجيل الخروج بنجاح 👋");
+    window.location.href = 'index.html'; // يرجع للرئيسية كزائر
+};
+
+// ==========================================
+// 4. الشريط العلوي الذكي (Dynamic Navbar)
 // ==========================================
 function setupDynamicNavbar() {
     const isLoggedIn = sessionStorage.getItem('is_logged_in') === 'true';
     const userRole = sessionStorage.getItem('user_role');
-    const userName = sessionStorage.getItem('user_full_name');
+    const userName = sessionStorage.getItem('user_full_name') || '';
     
     const navLinksContainer = document.querySelector('.nav-links');
     if (!navLinksContainer) return;
@@ -111,9 +112,10 @@ function setupDynamicNavbar() {
                 <a href="index.html">الرئيسية</a>
                 <span style="color: #475569; margin: 0 10px;">|</span>
                 <a href="admin-dashboard.html">لوحة الأدمن</a>
-                <a href="admin-orders.html">إدارة الطلبات</a>
+                <a href="admin-orders.html">الطلبات</a>
                 <a href="admin-items.html">الأصناف</a>
-                <a href="admin-offers.html">العروض</a>
+                <a href="admin-offers.html">العروض والولاء</a>
+                <a href="admin-drivers.html">المندوبين</a>
                 <a href="#" onclick="window.handleLogout()" style="color:#ef4444; font-weight:bold;">خروج 🚪</a>
             `;
         } else if (userRole === 'DRIVER') {
@@ -122,7 +124,7 @@ function setupDynamicNavbar() {
                 <a href="#" onclick="window.handleLogout()" style="color:#ef4444; font-weight:bold;">خروج 🚪</a>
             `;
         } else {
-            // عميل
+            // عميل مسجل
             navLinksContainer.innerHTML = `
                 <a href="index.html">الرئيسية</a>
                 <a href="menu.html">القائمة</a>
@@ -132,7 +134,7 @@ function setupDynamicNavbar() {
                 <span style="color: var(--primary); font-weight:bold;">أهلاً، ${userName.split(' ')[0]} 👋</span>
                 <a href="#" onclick="window.handleLogout()" style="color:#ef4444; font-weight:bold;">خروج 🚪</a>
             `;
-            window.updateCartCount(); 
+            if (typeof window.updateCartCount === 'function') window.updateCartCount(); 
         }
     } else {
         // زائر غير مسجل
@@ -144,12 +146,12 @@ function setupDynamicNavbar() {
             <span style="color: #475569; margin: 0 10px;">|</span>
             <a href="login.html" style="background:var(--primary); color:white; padding:5px 15px; border-radius:20px;">تسجيل الدخول</a>
         `;
-        window.updateCartCount();
+        if (typeof window.updateCartCount === 'function') window.updateCartCount();
     }
 }
 
 // ==========================================
-// 3. وظائف السلة والتنسيق
+// 5. وظائف السلة والتنسيق العامة
 // ==========================================
 window.addToCart = (id, name, price, image) => {
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -158,7 +160,7 @@ window.addToCart = (id, name, price, image) => {
     else cart.push({ id, name, price: parseFloat(price), image, quantity: 1 });
     
     localStorage.setItem('cart', JSON.stringify(cart));
-    window.updateCartCount();
+    if (typeof window.updateCartCount === 'function') window.updateCartCount();
     window.showAlert(`تم إضافة ${name} للسلة بنجاح ✅`);
 };
 
