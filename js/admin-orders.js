@@ -32,8 +32,10 @@ function renderBoard(orders) {
     
     // تصفير القوائم
     statuses.forEach(status => {
-        document.getElementById(`list-${status}`).innerHTML = '';
-        document.getElementById(`count-${status}`).innerText = '0';
+        const listEl = document.getElementById(`list-${status}`);
+        const countEl = document.getElementById(`count-${status}`);
+        if (listEl) listEl.innerHTML = '';
+        if (countEl) countEl.innerText = '0';
     });
 
     orders.forEach(order => {
@@ -57,8 +59,22 @@ function renderBoard(orders) {
 
         const time = new Date(order.created_at).toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'});
 
+        // 👈 التعديل الأول: محاولة استخراج اسم المندوب من الربط بقاعدة البيانات
+        let driverName = '';
+        if (order.delivery_drivers && order.delivery_drivers.name) {
+            driverName = order.delivery_drivers.name;
+        }
+
+        // تجهيز شكل المندوب لو كان موجود
+        const driverHtml = driverName ? 
+            `<div style="margin-top: 5px; color: #8b5cf6; font-weight: bold; font-size: 0.85rem;">
+                🛵 المندوب: ${driverName}
+            </div>` : '';
+
         const card = document.createElement('div');
         card.className = `order-card status-${order.status}`;
+        
+        // 👈 التعديل الثاني: إضافة ${driverHtml} تحت عنوان العميل
         card.innerHTML = `
             <div class="card-header">
                 <span class="order-code">${order.order_code}</span>
@@ -66,7 +82,8 @@ function renderBoard(orders) {
             </div>
             <div class="customer-info">
                 <span class="customer-name">${order.customer_name}</span>
-                <span class="customer-addr">${order.customer_address}</span>
+                <span class="customer-addr">${order.customer_address || 'استلام من المطبخ'}</span>
+                ${driverHtml}
             </div>
             <div class="items-summary">
                 ${itemsHtml}
