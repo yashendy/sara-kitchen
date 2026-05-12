@@ -1,5 +1,5 @@
 // js/admin-items.js
-
+let allProducts = []; // 👈 السطر ده اللي كان ناقص عشان يحفظ الأصناف والأحجام
 let allCategories = [];
 let currentEditingItemId = null;
 let selectedImageFile = null;
@@ -135,6 +135,8 @@ async function loadItems() {
         
         if (error) throw error;
         
+        allProducts = data; // 👈 حفظ البيانات هنا لتستخدمها دالة التعديل
+        
         if(data.length === 0) {
             container.innerHTML = '<p style="text-align:center; padding:20px;">لا توجد أصناف، أضيفي صنفك الأول! 🍲</p>';
             return;
@@ -144,8 +146,6 @@ async function loadItems() {
         
         data.forEach(item => {
             let priceDisplay = `<strong>${item.price} ج.م</strong>`;
-            
-            // لو في أحجام، نعرض عددها كمعلومة
             if (item.variants && item.variants.length > 0) {
                 priceDisplay = `<span style="color:#d97706; font-weight:bold; font-size:0.9rem;">له ${item.variants.length} أحجام</span>`;
             }
@@ -158,10 +158,9 @@ async function loadItems() {
                     <td><span style="background:#e2e8f0; padding:3px 8px; border-radius:12px; font-size:0.8rem;">${item.categories ? item.categories.name : 'بدون'}</span></td>
                     <td>
                         ${item.is_available ? '<span class="badge-tags">متاح ✅</span>' : '<span class="badge-calories">غير متاح ❌</span>'}
-                        ${item.in_offer ? '<span class="badge-offer">في العرض</span>' : ''}
                     </td>
                     <td>
-                        <button class="btn-primary" style="padding:5px 10px; font-size:0.8rem;" onclick='editItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>تعديل ✏️</button>
+                        <button class="btn-primary" style="padding:5px 10px; font-size:0.8rem;" onclick="editItem(${item.id})">تعديل ✏️</button>
                         <button class="btn-secondary" style="background:#ef4444; color:white; padding:5px 10px; border:none; font-size:0.8rem;" onclick="deleteItem(${item.id})">حذف 🗑️</button>
                     </td>
                 </tr>
@@ -185,13 +184,17 @@ function openAddItemModal() {
     document.getElementById('itemModal').hidden = false;
 }
 
-window.editItem = (item) => {
+window.editItem = (itemId) => {
+    // البحث عن الصنف في المصفوفة المخزنة بالذاكرة
+    const item = allProducts.find(p => p.id === itemId);
+    if (!item) return;
+
     currentEditingItemId = item.id;
     document.getElementById('itemModalTitle').innerText = 'تعديل الصنف';
     
     document.getElementById('itemName').value = item.name;
     document.getElementById('itemPrice').value = item.price;
-    document.getElementById('itemCategory').value = item.category_id;
+    document.getElementById('itemCategory').value = item.category_id || '';
     document.getElementById('itemCalories').value = item.calories || '';
     document.getElementById('itemTags').value = item.tags || '';
     document.getElementById('itemInstant').checked = item.is_instant;
@@ -199,11 +202,14 @@ window.editItem = (item) => {
     document.getElementById('itemAvailable').checked = item.is_available;
     document.getElementById('itemImageUrl').value = item.image_url || '';
     
-    // تحميل الأحجام إن وجدت
+    // 👈 تفريغ الأحجام القديمة ثم إعادة رسمها بدقة
     const varContainer = document.getElementById('variants-container');
-    varContainer.innerHTML = '';
+    varContainer.innerHTML = ''; 
+    
     if (item.variants && Array.isArray(item.variants)) {
-        item.variants.forEach(v => addVariantRow(v.name, v.price));
+        item.variants.forEach(v => {
+            addVariantRow(v.name, v.price);
+        });
     }
 
     if (item.image_url) {
