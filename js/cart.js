@@ -342,3 +342,70 @@ async function handleOrderSubmit(e) {
         alert("حدث خطأ أثناء إرسال الطلب: " + err.message);
     }
 }
+
+// متغيرات الولاء
+let userLoyaltyPoints = 0;
+let loyaltyDiscountValue = 0;
+let isPointsApplied = false;
+
+// دالة التحقق من النقاط برقم الهاتف
+window.checkLoyaltyPoints = async () => {
+    const phone = document.getElementById('loyalty-phone').value.trim();
+    const msgEl = document.getElementById('loyalty-msg');
+    const usePointsSection = document.getElementById('use-points-section');
+    
+    if (!phone) {
+        msgEl.innerText = "يرجى كتابة رقم الهاتف أولاً.";
+        msgEl.style.color = "red";
+        return;
+    }
+
+    msgEl.innerText = "جاري التحقق... ⏳";
+    msgEl.style.color = "#64748b";
+
+    try {
+        // نبحث عن العميل برقم تليفونه في جدول users
+        const { data: user, error } = await window.supabaseClient
+            .from('users')
+            .select('full_name, loyalty_points')
+            .eq('phone', phone)
+            .single();
+
+        if (error || !user) {
+            msgEl.innerText = "لا يوجد حساب سابق بهذا الرقم، اطلب الآن لتبدأ بجمع النقاط! 🎁";
+            msgEl.style.color = "#64748b";
+            usePointsSection.style.display = 'none';
+            return;
+        }
+
+        userLoyaltyPoints = user.loyalty_points || 0;
+
+        if (userLoyaltyPoints < 10) {
+            msgEl.innerText = `أهلاً ${user.full_name || ''} 👋.. رصيدك الحالي (${userLoyaltyPoints} نقطة) غير كافٍ للاستبدال. (الحد الأدنى 10 نقاط)`;
+            msgEl.style.color = "#d97706";
+            usePointsSection.style.display = 'none';
+        } else {
+            // نحسب الفلوس بناءً على الإعدادات اللي عملتيها في صفحة الأدمن
+            // مثلا لو كل 10 نقط بجنيه، وهو معاه 50 نقطة = 5 جنيه خصم
+            const pointsValue = Math.floor(userLoyaltyPoints / 10) * storeSettings.discount_per_10_points;
+            
+            msgEl.innerText = `أهلاً ${user.full_name || ''} 👋.. لديك ${userLoyaltyPoints} نقطة تساوي خصم (${pointsValue} ج.م) 🎉`;
+            msgEl.style.color = "green";
+            usePointsSection.style.display = 'block';
+            
+            loyaltyDiscountValue = pointsValue;
+        }
+
+    } catch (err) {
+        console.error(err);
+        msgEl.innerText = "حدث خطأ أثناء التحقق من النقاط.";
+    }
+};
+
+// دالة تطبيق الخصم
+window.applyLoyaltyPoints = () => {
+    isPointsApplied = true;
+    document.getElementById('use-points-section').style.display = 'none';
+    document.getElementById('loyalty-msg').innerText = "✅ تم تطبيق خصم النقاط بنجاح!";
+    updateTotalWithDelivery(); // نعيد حساب الإجمالي عشان نخصم الفلوس
+};
