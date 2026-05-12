@@ -339,3 +339,33 @@ async function saveCategoryForm() {
   document.getElementById("categoryName").value = "";
   reloadCategoriesOnly();
 }
+
+// إضافة سطر جديد للحجم
+window.addVariantRow = (name = '', price = '') => {
+    const container = document.getElementById('variants-container');
+    const row = document.createElement('div');
+    row.className = 'variant-row';
+    row.style.display = 'flex';
+    row.style.gap = '10px';
+    row.style.marginBottom = '10px';
+    row.innerHTML = `
+        <input type="text" placeholder="اسم الحجم (مثال: طبق عائلي)" value="${name}" class="var-name" style="flex:2; padding: 8px; border: 1px solid #cbd5e1; border-radius: 5px;">
+        <input type="number" placeholder="السعر" value="${price}" class="var-price" style="flex:1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 5px;">
+        <button type="button" onclick="this.parentElement.remove()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">X</button>
+    `;
+    container.appendChild(row);
+};
+
+// تجميع بيانات الأحجام قبل الحفظ
+window.getVariantsData = () => {
+    const rows = document.querySelectorAll('.variant-row');
+    let variants = [];
+    rows.forEach(row => {
+        const vName = row.querySelector('.var-name').value.trim();
+        const vPrice = parseFloat(row.querySelector('.var-price').value);
+        if (vName && !isNaN(vPrice)) {
+            variants.push({ name: vName, price: vPrice });
+        }
+    });
+    return variants;
+};
