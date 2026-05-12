@@ -133,7 +133,7 @@ async function handleOrderSubmit(e) {
         }
     }
 
-    // تجهيز بيانات الطلب للإرسال
+  // تجهيز بيانات الطلب للإرسال
     const orderData = {
         customer_name: document.getElementById('cust-name').value,
         customer_phone: document.getElementById('cust-phone').value,
@@ -141,7 +141,8 @@ async function handleOrderSubmit(e) {
         total_amount: finalTotal, // السعر النهائي (شامل الخصم لو فيه كوبون)
         delivery_commission: commission, 
         status: 'PENDING',
-        order_code: 'S' + Math.floor(1000 + Math.random() * 9000), 
+        order_code: 'S' + Math.floor(1000 + Math.random() * 9000),
+        items: cart, // 👈 التعديل هنا: إرسال محتويات السلة للمطبخ
         created_at: new Date().toISOString()
     };
 
@@ -151,6 +152,17 @@ async function handleOrderSubmit(e) {
             .insert([orderData]);
 
         if (error) throw error;
+
+        alert("تم استلام طلبك بنجاح يا فنان! 🥘\nكود الطلب الخاص بك هو: " + orderData.order_code);
+        
+        // مسح السلة والعودة للرئيسية
+        localStorage.removeItem('cart');
+        window.location.href = 'index.html';
+
+    } catch (err) {
+        console.error("Submission Error:", err);
+        alert("حدث خطأ أثناء إرسال الطلب: " + err.message);
+    }
 
         alert("تم استلام طلبك بنجاح يا فنان! 🥘\nكود الطلب الخاص بك هو: " + orderData.order_code);
         
