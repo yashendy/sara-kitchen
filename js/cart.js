@@ -104,6 +104,7 @@ window.updateTotalWithDelivery = () => {
  */
 // دالة معالجة إرسال الطلب لقاعدة البيانات
 // دالة معالجة إرسال الطلب لقاعدة البيانات
+// دالة معالجة إرسال الطلب لقاعدة البيانات
 async function handleOrderSubmit(e) {
     e.preventDefault();
     
@@ -119,10 +120,23 @@ async function handleOrderSubmit(e) {
     const finalTotal = parseFloat(finalTotalText.replace(" ج.م", ""));
 
     const addressInput = document.getElementById('cust-address');
+    
+    // --- الفحص الذكي للعنوان ---
+    // لو العميل طالب توصيل، ومكتبش عنوان، نوقفه ونطلب منه العنوان
+    if (deliveryType === 'DELIVERY') {
+        if (!addressInput || addressInput.value.trim() === '') {
+            alert("يرجى كتابة العنوان بالتفصيل لتوصيل الطلب!");
+            if (addressInput) addressInput.focus();
+            return; // وقف الإرسال
+        }
+    }
+
+    // تحديد العنوان النهائي بناءً على نوع الاستلام
     const customerAddress = (deliveryType === 'PICKUP') 
         ? 'استلام من المطبخ' 
-        : (addressInput ? addressInput.value : 'لم يتم إدخال عنوان');
+        : addressInput.value.trim();
 
+    // حساب عمولة التوصيل
     let commission = 0;
     if (deliveryType === 'DELIVERY') {
         if (zoneValue !== 'custom') {
@@ -132,7 +146,7 @@ async function handleOrderSubmit(e) {
         }
     }
 
-    // تجهيز بيانات الطلب (مضاف إليها محتويات السلة)
+    // تجهيز بيانات الطلب وإرسال محتويات السلة للمطبخ
     const orderData = {
         customer_name: document.getElementById('cust-name').value,
         customer_phone: document.getElementById('cust-phone').value,
@@ -141,7 +155,7 @@ async function handleOrderSubmit(e) {
         delivery_commission: commission, 
         status: 'PENDING',
         order_code: 'S' + Math.floor(1000 + Math.random() * 9000),
-        items: cart, // 👈 هنا بنبعت الأصناف للمطبخ
+        items: cart, 
         created_at: new Date().toISOString()
     };
 
@@ -150,19 +164,17 @@ async function handleOrderSubmit(e) {
             .from('orders')
             .insert([orderData]);
 
-        if (error) throw error; // هنا القوس اللي كان عامل المشكلة مظبوط
+        if (error) throw error;
 
         alert("تم استلام طلبك بنجاح يا فنان! 🥘\nكود الطلب الخاص بك هو: " + orderData.order_code);
         
-        // 1. تفريغ السلة من الذاكرة
+        // مسح السلة وتصفير العداد
         localStorage.removeItem('cart');
-        
-        // 2. تصفير العداد في الهيدر
         if (typeof updateCartCount === 'function') {
             updateCartCount();
         }
 
-        // 3. توجيه العميل لصفحة التتبع عشان يطمن على أوردره
+        // التوجيه لصفحة التتبع
         window.location.href = `track.html?code=${orderData.order_code}`;
 
     } catch (err) {
