@@ -541,3 +541,118 @@ body {
   font-size: 0.8rem;
   font-weight: bold;
 }
+
+
+/* =========================================
+   صفحة طلباتي (سجل الطلبات وإعادة الطلب)
+========================================= */
+.my-orders-container { 
+    max-width: 800px; 
+    margin: 40px auto; 
+    padding: 0 20px; 
+    min-height: 60vh; 
+}
+
+.search-box { 
+    background: white; 
+    padding: 25px; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+    margin-bottom: 30px; 
+    text-align: center; 
+}
+
+.search-box input { 
+    width: 100%; 
+    max-width: 400px; 
+    padding: 12px; 
+    border: 2px solid #e2e8f0; 
+    border-radius: 8px; 
+    font-size: 1.1rem; 
+    margin-bottom: 15px; 
+    font-family: inherit; 
+    text-align: center; 
+}
+
+.search-box input:focus { 
+    outline: none; 
+    border-color: #d97706; 
+}
+
+.history-card { 
+    background: white; 
+    border-radius: 12px; 
+    padding: 20px; 
+    margin-bottom: 20px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+    border: 1px solid #f1f5f9; 
+    transition: transform 0.2s; 
+}
+
+.history-card:hover { 
+    transform: translateY(-3px); 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+}
+
+.history-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    border-bottom: 1px solid #f1f5f9; 
+    padding-bottom: 15px; 
+    margin-bottom: 15px; 
+}
+
+.history-date { 
+    color: #64748b; 
+    font-size: 0.9rem; 
+}
+
+.history-items { 
+    margin-bottom: 15px; 
+    font-size: 0.95rem; 
+    color: #334155; 
+    line-height: 1.6; 
+}
+
+.history-footer { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: #f8fafc; 
+    padding: 12px; 
+    border-radius: 8px; 
+}
+
+.history-total { 
+    font-weight: bold; 
+    font-size: 1.1rem; 
+    color: #0f172a; 
+}
+
+/* تنسيق حالات الطلب */
+.status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
+.bg-PENDING { background: #fef3c7; color: #d97706; }
+.bg-PREPARING { background: #dbeafe; color: #2563eb; }
+.bg-WITH_DRIVER { background: #ede9fe; color: #7c3aed; }
+.bg-DELIVERED { background: #d1fae5; color: #059669; }
+
+/* زر إعادة الطلب */
+.btn-reorder { 
+    background: #d97706; 
+    color: white; 
+    border: none; 
+    padding: 8px 15px; 
+    border-radius: 8px; 
+    font-family: inherit; 
+    font-weight: bold; 
+    cursor: pointer; 
+    transition: 0.3s; 
+    display: flex; 
+    align-items: center; 
+    gap: 5px; 
+}
+
+.btn-reorder:hover { 
+    background: #b45309; 
+}
