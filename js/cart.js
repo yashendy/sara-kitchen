@@ -42,16 +42,17 @@ async function fetchStoreSettings() {
  * 2. دالة عرض محتويات السلة وتحديث الأسعار الأولية وإضافة خانة الكمية
  */
 function renderCart() {
-    // لو انتي مسمية السلة cart او sara_cart، اتأكدي من الاسم، هنا استخدمنا 'cart' زي الكود بتاعك
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
     const container = document.getElementById('cart-items-container');
     let subtotal = 0;
 
+    if (!container) return; // حماية إضافية
     container.innerHTML = '';
 
     if (cart.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:20px;"><p>السلة فارغة حالياً.. اذهب للمنيو واطلب ألذ الأكلات! 🥗</p><a href="menu.html" class="btn btn-primary">تصفح القائمة</a></div>';
-        document.getElementById('subtotal-price').innerText = "0.00 ج.م";
+        container.innerHTML = '<div style="text-align:center; padding:20px;"><p>السلة فارغة حالياً.. اذهب للمنيو واطلب ألذ الأكلات! 🥗</p><a href="menu.html" class="btn btn-primary" style="display:inline-block; margin-top:10px;">تصفح القائمة</a></div>';
+        const subEl = document.getElementById('subtotal-price');
+        if(subEl) subEl.innerText = "0.00 ج.م";
         updateTotalWithDelivery();
         return;
     }
@@ -61,7 +62,7 @@ function renderCart() {
         subtotal += itemTotal;
         container.innerHTML += `
             <div class="cart-item" style="display: flex; align-items: center; background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                <img src="${item.image_url || item.image || 'default-food.png'}" alt="${item.name}" style="width: 70px; height: 70px; border-radius: 8px; margin-left: 15px;">
+                <img src="${item.image_url || item.image || 'default-food.png'}" alt="${item.name}" style="width: 70px; height: 70px; border-radius: 8px; margin-left: 15px; object-fit: cover;">
                 
                 <div class="item-details" style="flex-grow: 1;">
                     <h4 style="margin: 0 0 5px 0;">${item.name}</h4>
@@ -84,10 +85,9 @@ function renderCart() {
         `;
     });
 
-    // تحديث سعر المشتريات فقط
-    document.getElementById('subtotal-price').innerText = subtotal.toFixed(2) + " ج.م";
+    const subEl = document.getElementById('subtotal-price');
+    if (subEl) subEl.innerText = subtotal.toFixed(2) + " ج.م";
     
-    // استدعاء دالة تحديث الإجمالي النهائي فوراً
     updateTotalWithDelivery();
 }
 
@@ -98,12 +98,12 @@ window.updateItemQuantity = (index, newQuantity) => {
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
     let qty = parseInt(newQuantity);
     
-    if (qty < 1) qty = 1; // منع الكميات السالبة أو الصفر
+    if (qty < 1) qty = 1; 
     
     cart[index].quantity = qty;
     localStorage.setItem('cart', JSON.stringify(cart));
     
-    renderCart(); // إعادة رسم السلة لتحديث الأسعار والإجمالي
+    renderCart(); 
 };
 
 /**
@@ -113,8 +113,232 @@ window.removeFromCart = (index) => {
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
     cart.splice(index, 1);
     localStorage.setItem('cart', JSON.stringify(cart));
-    renderCart(); // إعادة العرض فوراً
+    renderCart(); 
 };
 
 /**
- * 5. دالة التحكم في إظهار/إخ
+ * 5. دالة التحكم في إظهار/إخفاء خيارات التوصيل
+ */
+window.toggleDeliveryZones = () => {
+    const typeEl = document.getElementById('delivery-type');
+    if (!typeEl) return;
+    const type = typeEl.value;
+    const zonesGroup = document.getElementById('zones-group');
+    const deliveryRow = document.getElementById('delivery-row');
+    const addressGroup = document.getElementById('address-group');
+    
+    if (type === 'PICKUP') {
+        if(zonesGroup) zonesGroup.style.display = 'none';
+        if(deliveryRow) deliveryRow.style.display = 'none';
+        if(addressGroup) addressGroup.style.display = 'none';
+    } else {
+        if(zonesGroup) zonesGroup.style.display = 'block';
+        if(deliveryRow) deliveryRow.style.display = 'flex';
+        if(addressGroup) addressGroup.style.display = 'block';
+    }
+    updateTotalWithDelivery();
+};
+
+/**
+ * 6. دالة تحديث الحسبة النهائية 
+ */
+window.updateTotalWithDelivery = () => {
+    const subEl = document.getElementById('subtotal-price');
+    if (!subEl) return;
+    const subtotalText = subEl.innerText;
+    const subtotal = parseFloat(subtotalText.replace(" ج.م", "")) || 0;
+    
+    const typeEl = document.getElementById('delivery-type');
+    const deliveryType = typeEl ? typeEl.value : 'DELIVERY';
+    
+    const zoneEl = document.getElementById('delivery-zone');
+    const zoneValue = zoneEl ? zoneEl.value : '0';
+    
+    let deliveryCost = 0;
+    const costEl = document.getElementById('delivery-cost');
+    if (deliveryType === 'DELIVERY') {
+        if (zoneValue === 'custom') {
+            deliveryCost = 0;
+            if(costEl) costEl.innerText = "يحدد لاحقاً";
+        } else {
+            deliveryCost = parseFloat(zoneValue) || 0;
+            if(costEl) costEl.innerText = deliveryCost.toFixed(2) + " ج.م";
+        }
+    } else {
+        if(costEl) costEl.innerText = "0.00 ج.م";
+    }
+
+    let bulkDiscountValue = 0;
+    const bulkRow = document.getElementById('bulk-discount-row');
+    const bulkVal = document.getElementById('bulk-discount-val');
+
+    if (storeSettings.bulk_threshold > 0 && subtotal >= storeSettings.bulk_threshold) {
+        bulkDiscountValue = subtotal * (storeSettings.bulk_discount_percent / 100);
+        if(bulkRow) bulkRow.style.display = 'flex'; 
+        if(bulkVal) bulkVal.innerText = bulkDiscountValue.toFixed(2);
+    } else {
+        if(bulkRow) bulkRow.style.display = 'none';
+        bulkDiscountValue = 0;
+    }
+
+    let couponDiscountValue = 0;
+    const couponDisplay = document.getElementById('discount-display');
+    const couponAmount = document.getElementById('discount-amount');
+
+    if (appliedCoupon) {
+        if (appliedCoupon.discount_type === 'PERCENTAGE') {
+            couponDiscountValue = subtotal * (appliedCoupon.discount_value / 100);
+        } else {
+            couponDiscountValue = appliedCoupon.discount_value;
+        }
+        if(couponDisplay) couponDisplay.style.display = 'flex';
+        if(couponAmount) couponAmount.innerText = `-${couponDiscountValue.toFixed(2)} ج.م`;
+    } else {
+        if(couponDisplay) couponDisplay.style.display = 'none';
+    }
+
+    let totalDiscounts = bulkDiscountValue + couponDiscountValue;
+    let finalTotal = (subtotal - totalDiscounts) + deliveryCost;
+
+    if(finalTotal < 0) finalTotal = 0; 
+
+    const totalEl = document.getElementById('total-price');
+    if(totalEl) totalEl.innerText = finalTotal.toFixed(2) + " ج.م";
+};
+
+/**
+ * 7. دوال الكوبون
+ */
+window.applyCoupon = async () => {
+    const inputEl = document.getElementById('coupon-input');
+    if(!inputEl) return;
+    const code = inputEl.value.trim().toUpperCase();
+    const msgEl = document.getElementById('coupon-msg');
+    
+    const subEl = document.getElementById('subtotal-price');
+    const subtotalText = subEl ? subEl.innerText : "0";
+    const subtotal = parseFloat(subtotalText.replace(" ج.م", "")) || 0;
+
+    if (!code) return;
+
+    try {
+        const { data: coupon, error } = await window.supabaseClient
+            .from('coupons')
+            .select('*')
+            .eq('code', code)
+            .eq('is_active', true)
+            .single();
+
+        if (error || !coupon) {
+            if(msgEl) { msgEl.innerText = "❌ الكوبون غير صحيح أو منتهي الصلاحية"; msgEl.style.color = "red"; }
+            removeCoupon();
+            return;
+        }
+
+        if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+            if(msgEl) { msgEl.innerText = "❌ هذا الكوبون انتهت صلاحيته"; msgEl.style.color = "red"; }
+            removeCoupon();
+            return;
+        }
+
+        if (subtotal < coupon.min_order_amount) {
+            if(msgEl) { msgEl.innerText = `⚠️ يلزمك طلب بـ ${coupon.min_order_amount} ج.م لتفعيل الخصم`; msgEl.style.color = "orange"; }
+            removeCoupon();
+            return;
+        }
+
+        appliedCoupon = coupon;
+        if(msgEl) { msgEl.innerText = "✅ تم تطبيق الخصم بنجاح!"; msgEl.style.color = "green"; }
+        updateTotalWithDelivery(); 
+
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+window.removeCoupon = () => {
+    appliedCoupon = null;
+    updateTotalWithDelivery();
+};
+
+/**
+ * 8. معالجة إرسال الطلب
+ */
+async function handleOrderSubmit(e) {
+    e.preventDefault();
+    
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    if (cart.length === 0) {
+        alert("سلتك فارغة!");
+        return;
+    }
+
+    const typeEl = document.getElementById('delivery-type');
+    const deliveryType = typeEl ? typeEl.value : 'DELIVERY';
+    const zoneEl = document.getElementById('delivery-zone');
+    const zoneValue = zoneEl ? zoneEl.value : '0';
+    
+    const totalEl = document.getElementById('total-price');
+    const finalTotalText = totalEl ? totalEl.innerText : "0";
+    const finalTotal = parseFloat(finalTotalText.replace(" ج.م", ""));
+
+    const addressInput = document.getElementById('cust-address');
+    
+    if (deliveryType === 'DELIVERY') {
+        if (!addressInput || addressInput.value.trim() === '') {
+            alert("يرجى كتابة العنوان بالتفصيل لتوصيل الطلب!");
+            if (addressInput) addressInput.focus();
+            return; 
+        }
+    }
+
+    const customerAddress = (deliveryType === 'PICKUP') 
+        ? 'استلام من المطبخ' 
+        : addressInput.value.trim();
+
+    let commission = 0;
+    if (deliveryType === 'DELIVERY' && zoneValue !== 'custom') {
+        commission = parseFloat(zoneValue) || 0;
+    }
+
+    const orderData = {
+        customer_name: document.getElementById('cust-name').value,
+        customer_phone: document.getElementById('cust-phone').value,
+        customer_address: customerAddress,
+        total_amount: finalTotal,
+        delivery_commission: commission, 
+        status: 'PENDING',
+        order_code: 'S' + Math.floor(1000 + Math.random() * 9000),
+        items: cart, 
+        created_at: new Date().toISOString()
+    };
+
+    if(appliedCoupon) {
+        orderData.used_coupon_code = appliedCoupon.code;
+    }
+
+    try {
+        const { error } = await window.supabaseClient
+            .from('orders')
+            .insert([orderData]);
+
+        if (error) throw error;
+
+        if(appliedCoupon) {
+             window.supabaseClient.rpc('increment_coupon_usage', { coupon_id: appliedCoupon.id });
+        }
+
+        alert("تم استلام طلبك بنجاح يا فنان! 🥘\nكود الطلب الخاص بك هو: " + orderData.order_code);
+        
+        localStorage.removeItem('cart');
+        if (typeof updateCartCount === 'function') {
+            updateCartCount();
+        }
+
+        window.location.href = `track.html?code=${orderData.order_code}`;
+
+    } catch (err) {
+        console.error("Submission Error:", err);
+        alert("حدث خطأ أثناء إرسال الطلب: " + err.message);
+    }
+}
