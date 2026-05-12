@@ -87,6 +87,86 @@ function updateGlobalUI() {
     if (phoneElement) {
         phoneElement.textContent = window.APP_CONFIG.contact.phone;
     }
+
+
+    // js/app.js
+
+// 1. دالة تسجيل الدخول (للكل: أدمن، مندوب، عميل)
+window.handleLogin = async (phone, password) => {
+    try {
+        // البحث عن المستخدم برقم الهاتف وكلمة المرور
+        const { data: user, error } = await window.supabaseClient
+            .from('users')
+            .select('*')
+            .eq('phone', phone)
+            .eq('password', password) // يفضل مستقبلاً استخدام تشفير
+            .single();
+
+        if (error || !user) {
+            throw new Error("رقم الهاتف أو كلمة المرور غير صحيحة");
+        }
+
+        // حفظ بيانات الجلسة في المتصفح
+        sessionStorage.setItem('is_logged_in', 'true');
+        sessionStorage.setItem('user_role', user.role);
+        sessionStorage.setItem('user_id', user.id);
+        sessionStorage.setItem('user_full_name', user.full_name);
+
+        // التوجيه الذكي بناءً على الرتبة (Role)
+        if (user.role === 'ADMIN') {
+            sessionStorage.setItem('is_admin', 'true');
+            window.location.href = 'admin-dashboard.html';
+        } else if (user.role === 'DRIVER') {
+            window.location.href = 'driver-orders.html'; // شاشة المندوب
+        } else {
+            window.location.href = 'index.html'; // العميل يرجع للرئيسية
+        }
+
+    } catch (err) {
+        alert(err.message);
+    }
+};
+
+// 2. دالة إنشاء حساب جديد (للعملاء فقط)
+window.handleRegister = async (userData) => {
+    try {
+        // التأكد أولاً أن الرقم غير مسجل
+        const { data: existing } = await window.supabaseClient
+            .from('users')
+            .select('id')
+            .eq('phone', userData.phone)
+            .single();
+
+        if (existing) throw new Error("هذا الرقم مسجل بالفعل، جرب تسجيل الدخول.");
+
+        // إضافة المستخدم الجديد برتبة CUSTOMER
+        const { error } = await window.supabaseClient
+            .from('users')
+            .insert([{
+                full_name: userData.name,
+                phone: userData.phone,
+                password: userData.password,
+                address: userData.address,
+                role: 'CUSTOMER',
+                loyalty_points: 0
+            }]);
+
+        if (error) throw error;
+
+        alert("تم إنشاء حسابك بنجاح يا فنان! 🎉 يمكنك الآن تسجيل الدخول.");
+        window.location.reload(); // لإرجاعه لشاشة الدخول
+
+    } catch (err) {
+        alert(err.message);
+    }
+};
+
+// 3. دالة تسجيل الخروج (Logout)
+window.handleLogout = () => {
+    sessionStorage.clear(); // مسح كل بيانات الجلسة
+    alert("تم تسجيل الخروج بنجاح. ننتظرك مرة أخرى! 👋");
+    window.location.href = 'index.html';
+};
 }
 
 // وظيفة لعرض التنبيهات
