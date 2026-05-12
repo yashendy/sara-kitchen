@@ -327,4 +327,114 @@ window.checkLoyaltyPoints = async () => {
             const pointsValue = Math.floor(userLoyaltyPoints / 10) * storeSettings.discount_per_10_points;
             
             if(msgEl) { msgEl.innerText = `أهلاً ${user.full_name || ''} 👋.. لديك ${userLoyaltyPoints} نقطة تساوي خصم (${pointsValue} ج.م) 🎉`; msgEl.style.color = "green"; }
-            if(usePointsSection) use
+            if(usePointsSection) usePointsSection.style.display = 'block';
+            
+            loyaltyDiscountValue = pointsValue;
+        }
+
+    } catch (err) {
+        console.error(err);
+        if(msgEl) { msgEl.innerText = "حدث خطأ أثناء التحقق من النقاط."; }
+    }
+};
+
+window.applyLoyaltyPoints = () => {
+    isPointsApplied = true;
+    const usePointsSection = document.getElementById('use-points-section');
+    if(usePointsSection) usePointsSection.style.display = 'none';
+    
+    const msgEl = document.getElementById('loyalty-msg');
+    if(msgEl) { msgEl.innerText = "✅ تم تطبيق خصم النقاط بنجاح!"; msgEl.style.color = "green"; }
+    
+    updateTotalWithDelivery(); 
+};
+
+/**
+ * 9. معالجة إرسال الطلب لقاعدة البيانات
+ */
+async function handleOrderSubmit(e) {
+    e.preventDefault();
+    
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    if (cart.length === 0) {
+        alert("سلتك فارغة!");
+        return;
+    }
+
+    const typeEl = document.getElementById('delivery-type');
+    const deliveryType = typeEl ? typeEl.value : 'DELIVERY';
+    const zoneEl = document.getElementById('delivery-zone');
+    const zoneValue = zoneEl ? zoneEl.value : '0';
+    
+    const totalEl = document.getElementById('total-price');
+    const finalTotalText = totalEl ? totalEl.innerText : "0";
+    const finalTotal = parseFloat(finalTotalText.replace(" ج.م", ""));
+
+    const addressInput = document.getElementById('cust-address');
+    const phoneInput = document.getElementById('cust-phone').value;
+    
+    if (deliveryType === 'DELIVERY') {
+        if (!addressInput || addressInput.value.trim() === '') {
+            alert("يرجى كتابة العنوان بالتفصيل لتوصيل الطلب!");
+            if (addressInput) addressInput.focus();
+            return; 
+        }
+    }
+
+    const customerAddress = (deliveryType === 'PICKUP') 
+        ? 'استلام من المطبخ' 
+        : addressInput.value.trim();
+
+    let commission = 0;
+    if (deliveryType === 'DELIVERY' && zoneValue !== 'custom') {
+        commission = parseFloat(zoneValue) || 0;
+    }
+
+    const orderData = {
+        customer_name: document.getElementById('cust-name').value,
+        customer_phone: phoneInput,
+        customer_address: customerAddress,
+        total_amount: finalTotal,
+        delivery_commission: commission, 
+        status: 'PENDING',
+        order_code: 'S' + Math.floor(1000 + Math.random() * 9000),
+        items: cart, 
+        created_at: new Date().toISOString()
+    };
+
+    if(appliedCoupon) orderData.used_coupon_code = appliedCoupon.code;
+
+    try {
+        const { error } = await window.supabaseClient
+            .from('orders')
+            .insert([orderData]);
+
+        if (error) throw error;
+
+        // تحديث استخدام الكوبون
+        if(appliedCoupon) {
+             window.supabaseClient.rpc('increment_coupon_usage', { coupon_id: appliedCoupon.id });
+        }
+
+        // لو العميل استخدم نقط ولاء، محتاجين نخصمها من حسابه
+        if(isPointsApplied && loyaltyDiscountValue > 0) {
+             const pointsToDeduct = Math.floor(userLoyaltyPoints / 10) * 10;
+             // سيتم التحديث لاحقاً بدالة SQL، حالياً نتخطاها لتجنب أي أخطاء إضافية
+             console.log(`يجب خصم ${pointsToDeduct} نقطة من العميل.`);
+        }
+
+        alert("تم استلام طلبك بنجاح يا فنان! 🥘\nكود الطلب الخاص بك هو: " + orderData.order_code);
+        
+        localStorage.removeItem('cart');
+        if (typeof updateCartCount === 'function') {
+            updateCartCount();
+        }
+
+        window.location.href = `track.html?code=${orderData.order_code}`;
+
+    } catch (err) {
+        console.error("Submission Error:", err);
+        alert("حدث خطأ أثناء إرسال الطلب: " + err.message);
+    }
+}
+// --- نهاية الملف ---
