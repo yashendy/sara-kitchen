@@ -103,6 +103,7 @@ window.updateTotalWithDelivery = () => {
  * 4. دالة معالجة إرسال الطلب لقاعدة البيانات
  */
 // دالة معالجة إرسال الطلب لقاعدة البيانات
+// دالة معالجة إرسال الطلب لقاعدة البيانات
 async function handleOrderSubmit(e) {
     e.preventDefault();
     
@@ -117,32 +118,30 @@ async function handleOrderSubmit(e) {
     const finalTotalText = document.getElementById('total-price').innerText;
     const finalTotal = parseFloat(finalTotalText.replace(" ج.م", ""));
 
-    // --- التعديل هنا: الحصول على العنوان بأمان لتفادي خطأ null ---
     const addressInput = document.getElementById('cust-address');
     const customerAddress = (deliveryType === 'PICKUP') 
         ? 'استلام من المطبخ' 
         : (addressInput ? addressInput.value : 'لم يتم إدخال عنوان');
 
-    // تحديد عمولة المندوب بناءً على المنطقة المختارة
     let commission = 0;
     if (deliveryType === 'DELIVERY') {
         if (zoneValue !== 'custom') {
             commission = parseFloat(zoneValue);
         } else {
-            commission = 0; // سيقوم الأدمن بتعديلها لاحقاً في الداش بورد
+            commission = 0;
         }
     }
 
-  // تجهيز بيانات الطلب للإرسال
+    // تجهيز بيانات الطلب (مضاف إليها محتويات السلة)
     const orderData = {
         customer_name: document.getElementById('cust-name').value,
         customer_phone: document.getElementById('cust-phone').value,
-        customer_address: customerAddress, // استخدام المتغير الآمن
-        total_amount: finalTotal, // السعر النهائي (شامل الخصم لو فيه كوبون)
+        customer_address: customerAddress,
+        total_amount: finalTotal,
         delivery_commission: commission, 
         status: 'PENDING',
         order_code: 'S' + Math.floor(1000 + Math.random() * 9000),
-        items: cart, // 👈 التعديل هنا: إرسال محتويات السلة للمطبخ
+        items: cart, // 👈 هنا بنبعت الأصناف للمطبخ
         created_at: new Date().toISOString()
     };
 
@@ -151,24 +150,20 @@ async function handleOrderSubmit(e) {
             .from('orders')
             .insert([orderData]);
 
-        if (error) throw error;
+        if (error) throw error; // هنا القوس اللي كان عامل المشكلة مظبوط
 
         alert("تم استلام طلبك بنجاح يا فنان! 🥘\nكود الطلب الخاص بك هو: " + orderData.order_code);
         
-        // مسح السلة والعودة للرئيسية
+        // 1. تفريغ السلة من الذاكرة
         localStorage.removeItem('cart');
-        window.location.href = 'index.html';
-
-    } catch (err) {
-        console.error("Submission Error:", err);
-        alert("حدث خطأ أثناء إرسال الطلب: " + err.message);
-    }
-
-        alert("تم استلام طلبك بنجاح يا فنان! 🥘\nكود الطلب الخاص بك هو: " + orderData.order_code);
         
-        // مسح السلة والعودة للرئيسية
-        localStorage.removeItem('cart');
-        window.location.href = 'index.html';
+        // 2. تصفير العداد في الهيدر
+        if (typeof updateCartCount === 'function') {
+            updateCartCount();
+        }
+
+        // 3. توجيه العميل لصفحة التتبع عشان يطمن على أوردره
+        window.location.href = `track.html?code=${orderData.order_code}`;
 
     } catch (err) {
         console.error("Submission Error:", err);
