@@ -1,135 +1,109 @@
 // js/driver.js
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // الاعتماد على نظام تسجيل الدخول الخاص بك
-    const userId = sessionStorage.getItem('user_id');
-    const userRole = sessionStorage.getItem('user_role');
-
-    if (!userId || userRole !== 'DRIVER') {
-        window.location.href = 'admin-login.html';
+    // التأكد من أن المستخدم مندوب
+    const role = sessionStorage.getItem('user_role');
+    if (role !== 'DRIVER') {
+        window.location.href = 'login.html';
         return;
     }
 
-    await loadDriverData(userId);
+    const fullName = sessionStorage.getItem('user_full_name');
+    document.getElementById('driver-name').innerText = `أهلاً، ${fullName.split(' ')[0]} 👋`;
+
+    await refreshDriverData();
 });
 
-async function loadDriverData(userId) {
+async function refreshDriverData() {
+    const phone = sessionStorage.getItem('user_phone');
+    const container = document.getElementById('orders-list');
+
     try {
-        // 1. جلب بيانات المندوب
-        const { data: driver, error: dError } = await window.supabaseClient
-            .from('delivery_drivers')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-
-        if (dError) throw dError;
-
-        // 2. جلب كل الطلبات المرتبطة بهذا المندوب
-        const { data: orders, error: oError } = await window.supabaseClient
+        // 1. جلب كل الطلبات المرتبطة برقم هاتف المندوب (أو المعينة له)
+        // ملاحظة: نفترض هنا أن المندوب يرى الطلبات التي لم تُسلم بعد
+        const { data: orders, error } = await window.supabaseClient
             .from('orders')
             .select('*')
-            .eq('driver_id', driver.id);
+            .order('created_at', { ascending: false });
 
-        if (oError) throw oError;
+        if (error) throw error;
 
-        // --- العمليات الحسابية للمحفظة ---
-        let totalCashInHand = 0;   
-        let totalMyEarnings = 0;    
-
+        // 2. الحسابات المحاسبية (المحفظة)
+        let cashInHand = 0;   // إجمالي الكاش من الطلبات المسلمة ولم تورد بعد
+        let myEarnings = 0;    // إجمالي العمولات
+        
+        // تصفية الطلبات: (المسلمة اليوم للحساب) و (التي معه حالياً للتوصيل)
         const deliveredOrders = orders.filter(o => o.status === 'DELIVERED');
-        const pendingOrders = orders.filter(o => o.status === 'WITH_DRIVER');
+        const activeOrders = orders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING' || o.status === 'OUT_FOR_DELIVERY');
 
-        deliveredOrders.forEach(order => {
-            totalCashInHand += order.total_amount;
-            totalMyEarnings += (order.delivery_commission || 30);
+        deliveredOrders.forEach(o => {
+            cashInHand += (o.total_amount + (o.delivery_commission || 0));
+            myEarnings += (o.delivery_commission || 30); // الافتراضي 30 لو مش مسجلة
         });
 
-        const netToKitchen = (totalCashInHand - totalMyEarnings) - (driver.total_paid_to_kitchen || 0);
+        // تحديث أرقام المحفظة في الواجهة
+        document.getElementById('stat-cash').innerText = `${cashInHand.toFixed(0)} ج`;
+        document.getElementById('stat-earnings').innerText = `${myEarnings.toFixed(0)} ج`;
+        document.getElementById('stat-net').innerText = `${(cashInHand - myEarnings).toFixed(0)} ج`;
 
-        // إذا كانت دالة formatCurrency غير موجودة نستخدم التقريب العادي
-        const formatMoney = window.formatCurrency ? window.formatCurrency : (val) => val.toFixed(2) + ' ج.م';
-
-        document.getElementById('wallet-total').textContent = formatMoney(totalCashInHand);
-        document.getElementById('wallet-earnings').textContent = formatMoney(totalMyEarnings);
-        document.getElementById('wallet-net').textContent = formatMoney(netToKitchen);
-
-        // --- عرض الطلبات الجارية للتوصيل مع المكونات ---
-        const container = document.getElementById('driver-orders-list');
-        container.innerHTML = '';
-
-        if (pendingOrders.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:30px; background:white; border-radius:12px;"><h3 style="color:#64748b;">لا توجد طلبات جارية حالياً ☕</h3><p>خذ استراحة، سنرسل لك طلبات قريباً.</p></div>';
+        // 3. عرض قائمة الطلبات النشطة
+        if (activeOrders.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;">☕ مفيش طلبات حالياً.. استريح شوية!</div>';
             return;
         }
 
-        pendingOrders.forEach(order => {
-            // معالجة ذكية للأصناف ليراجعها المندوب مع العميل
-            let itemsText = "تفاصيل غير متوفرة";
-            if (order.items) {
-                let itemsArray = order.items;
-                if (typeof itemsArray === 'string') {
-                    try { itemsArray = JSON.parse(itemsArray); } catch(e){}
-                }
-                if (Array.isArray(itemsArray) && itemsArray.length > 0) {
-                    itemsText = itemsArray.map(item => `✔️ ${item.quantity}x ${item.name}`).join('<br>');
-                }
-            }
+        container.innerHTML = '';
+        activeOrders.forEach(order => {
+            // تجهيز نص المكونات (زي ما كنتي عاملاه في كودك)
+            const itemsText = order.items.map(i => `${i.name} (${i.quantity})`).join(' + ');
+            const totalToCollect = order.total_amount + (order.delivery_commission || 0);
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer_address)}`;
 
             container.innerHTML += `
-                <div class="driver-card">
-                    <div class="order-header">
-                        <h4 style="margin:0; color:#1e293b;">طلب #${order.order_code}</h4>
-                        <span class="commission-badge">عمولتك: ${order.delivery_commission || 30} ج</span>
+                <div class="order-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="order-id">#${order.order_code}</span>
+                        <span style="color:#10b981; font-weight:800; font-size:1.1rem;">تحصيل: ${totalToCollect.toFixed(0)} ج</span>
                     </div>
                     
-                    <h3 style="margin: 0 0 5px 0;">👤 ${order.customer_name}</h3>
-                    <p style="margin: 0 0 10px 0; color: #475569;">📍 <strong>العنوان:</strong> ${order.customer_address}</p>
+                    <div style="margin-top:15px; font-weight:700; color:#1e293b;">👤 ${order.customer_name}</div>
+                    <div style="font-size:0.9rem; color:#64748b; margin-top:5px;">📍 ${order.customer_address}</div>
                     
-                    <div class="items-box">
-                        <strong>🛒 محتويات الأوردر:</strong><br>
+                    <div class="order-items">
+                        <strong>مكونات الطلب:</strong><br>
                         ${itemsText}
                     </div>
 
-                    <div style="text-align: center; margin: 15px 0;">
-                        <span class="payment-badge">المطلوب تحصيله كاش: ${formatMoney(order.total_amount)}</span>
+                    <div class="btn-group">
+                        <a href="tel:${order.customer_phone}" class="btn-small btn-call">📞 اتصال</a>
+                        <a href="${mapUrl}" target="_blank" class="btn-small btn-map">🗺️ الخريطة</a>
                     </div>
-                    
-                    <a href="tel:${order.customer_phone}" class="btn-call">
-                        📞 اتصال بالعميل
-                    </a>
 
-                    <button onclick="finishOrder(${order.id}, '${order.order_code}')" class="btn-deliver">
-                        ✅ تم التسليم واستلام الكاش
-                    </button>
+                    <button onclick="completeOrder(${order.id})" class="btn-complete">تم التسليم واستلام الكاش ✅</button>
                 </div>
             `;
         });
 
     } catch (err) {
-        console.error("Driver Dashboard Error:", err);
+        console.error(err);
+        container.innerHTML = '<p style="text-align:center; color:red;">خطأ في جلب البيانات.</p>';
     }
 }
 
-// دالة إنهاء الطلب المعدلة
-window.finishOrder = async (id, code) => {
-    if (confirm(`هل استلمت الكاش بالكامل وسلمت الطلب رقم ${code}؟`)) {
-        try {
-            const { error } = await window.supabaseClient
-                .from('orders')
-                .update({ status: 'DELIVERED' })
-                .eq('id', id);
+window.completeOrder = async (orderId) => {
+    if (!confirm("هل استلمت المبلغ كامل وسلمت الطلب؟ 💰")) return;
 
-            if (error) throw error;
-            
-            alert("عاش يا بطل! تم التقفيل وإضافة العمولة لمحفظتك.");
-            location.reload(); // تحديث الصفحة لإعادة حساب المحفظة فوراً
-        } catch (err) {
-            alert("حدث خطأ أثناء تقفيل الطلب.");
-        }
+    try {
+        const { error } = await window.supabaseClient
+            .from('orders')
+            .update({ status: 'DELIVERED' })
+            .eq('id', orderId);
+
+        if (error) throw error;
+        
+        alert("عاش يا بطل! تم إضافة الأوردر لمحفظتك. 💪");
+        refreshDriverData(); // تحديث فوري للأرقام والقائمة
+    } catch (err) {
+        alert("حدث خطأ أثناء التحديث.");
     }
-};
-
-window.logout = () => { 
-    sessionStorage.clear(); 
-    window.location.href = 'index.html'; 
 };
