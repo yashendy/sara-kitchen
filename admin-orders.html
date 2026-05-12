@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الطلبات | مطبخ سارة</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin-dashboard.css">
+    <style>
+        /* تنسيقات خاصة بلوحة الكانبان للموبايل */
+        .kanban-container {
+            display: flex;
+            gap: 15px;
+            padding: 10px;
+            overflow-x: auto; /* للسماح بالتمرير الأفقي على الموبايل */
+            height: calc(100vh - 120px);
+            align-items: flex-start;
+        }
+
+        .kanban-column {
+            background: #e2e8f0;
+            min-width: 300px; /* عرض العمود على الموبايل */
+            max-width: 300px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+        }
+
+        .column-header {
+            padding: 15px;
+            background: #0f172a;
+            color: white;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+        }
+
+        .column-count {
+            background: var(--admin-primary);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+
+        .order-list {
+            padding: 10px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        /* تنسيق كارت الأوردر */
+        .order-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-right: 5px solid #cbd5e1;
+            transition: transform 0.2s;
+        }
+
+        .order-card:active { transform: scale(0.98); }
+
+        .card-header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px; }
+        .order-code { font-weight: bold; color: var(--admin-primary); }
+        .order-time { font-size: 0.75rem; color: #64748b; }
+
+        .customer-info { margin-bottom: 10px; }
+        .customer-name { font-weight: 700; display: block; }
+        .customer-addr { font-size: 0.85rem; color: #475569; display: block; }
+
+        .items-summary {
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+
+        .item-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+
+        .card-footer { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-status { flex: 1; padding: 8px; font-size: 0.8rem; border-radius: 6px; cursor: pointer; border: none; font-weight: bold; }
+        
+        /* ألوان الحالات */
+        .status-PENDING { border-right-color: #f59e0b; }
+        .status-PREPARING { border-right-color: #3b82f6; }
+        .status-WITH_DRIVER { border-right-color: #8b5cf6; }
+        .status-DELIVERED { border-right-color: #10b981; }
+    </style>
+</head>
+<body data-page="admin-orders">
+
+    <header class="navbar">
+        <div class="container">
+            <div class="logo"><a href="index.html">🍲 مطبخ سارة</a></div>
+            <nav class="nav-links">
+                <a href="admin-dashboard.html">الداشبورد</a>
+                <a href="admin-orders.html" class="active">الطلبات</a>
+                <a href="admin-items.html">الأصناف</a>
+                <a href="admin-offers.html">العروض</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="kanban-container" id="kanban-board">
+        <div class="kanban-column" id="col-PENDING">
+            <div class="column-header">
+                <span>🔔 جديد</span>
+                <span class="column-count" id="count-PENDING">0</span>
+            </div>
+            <div class="order-list" id="list-PENDING"></div>
+        </div>
+
+        <div class="kanban-column" id="col-PREPARING">
+            <div class="column-header">
+                <span>👩‍🍳 في المطبخ</span>
+                <span class="column-count" id="count-PREPARING">0</span>
+            </div>
+            <div class="order-list" id="list-PREPARING"></div>
+        </div>
+
+        <div class="kanban-column" id="col-WITH_DRIVER">
+            <div class="column-header">
+                <span>🛵 مع المندوب</span>
+                <span class="column-count" id="count-WITH_DRIVER">0</span>
+            </div>
+            <div class="order-list" id="list-WITH_DRIVER"></div>
+        </div>
+
+        <div class="kanban-column" id="col-DELIVERED">
+            <div class="column-header">
+                <span>✅ تم التسليم</span>
+                <span class="column-count" id="count-DELIVERED">0</span>
+            </div>
+            <div class="order-list" id="list-DELIVERED"></div>
+        </div>
+    </main>
+
+    <div id="driverModal" class="admin-modal" hidden>
+        <div class="admin-modal-dialog">
+            <div class="admin-modal-header"><h3>تعيين مندوب للطلب</h3></div>
+            <div class="admin-modal-body">
+                <select id="driverSelect" class="form-control">
+                    <option value="">اختر المندوب...</option>
+                </select>
+            </div>
+            <div class="admin-modal-footer">
+                <button class="btn-secondary" onclick="closeDriverModal()">إلغاء</button>
+                <button class="btn-primary" onclick="confirmAssignDriver()">تأكيد وإرسال</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/admin-orders.js"></script>
+</body>
+</html>
