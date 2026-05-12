@@ -100,14 +100,34 @@ function renderBoard(orders) {
 }
 
 function renderActionButtons(order) {
+    // 1. زرار الطباعة: متاح دائماً ليتمكن المطبخ من طباعة البون في أي وقت
+    const printBtn = `<button class="btn-status" 
+                        style="background:#475569; color:white; max-width:45px; display:flex; align-items:center; justify-content:center;" 
+                        onclick="printOrder(${order.id})" 
+                        title="طباعة الفاتورة">
+                        🖨️
+                      </button>`;
+    
+    let actionBtn = "";
+
+    // 2. تحديد زرار الحالة بناءً على وضع الأوردر الحالي
     if (order.status === 'PENDING') {
-        return `<button class="btn-status btn-primary" onclick="updateStatus(${order.id}, 'PREPARING')">بدء التحضير 👨‍🍳</button>`;
+        actionBtn = `<button class="btn-status btn-primary" onclick="updateStatus(${order.id}, 'PREPARING')">بدء التحضير 👨‍🍳</button>`;
     } else if (order.status === 'PREPARING') {
-        return `<button class="btn-status btn-primary" style="background:#8b5cf6" onclick="openDriverModal(${order.id})">تسليم لمندوب 🛵</button>`;
+        actionBtn = `<button class="btn-status btn-primary" style="background:#8b5cf6" onclick="openDriverModal(${order.id})">تسليم لمندوب 🛵</button>`;
     } else if (order.status === 'WITH_DRIVER') {
-        return `<button class="btn-status btn-primary" style="background:#10b981" onclick="updateStatus(${order.id}, 'DELIVERED')">تم التوصيل ✅</button>`;
+        actionBtn = `<button class="btn-status btn-primary" style="background:#10b981" onclick="updateStatus(${order.id}, 'DELIVERED')">تم التوصيل ✅</button>`;
+    } else {
+        actionBtn = `<span style="color:#10b981; font-size:0.8rem; font-weight:bold;">✅ طلب مكتمل</span>`;
     }
-    return `<span style="color:#10b981; font-size:0.8rem">✅ طلب مكتمل</span>`;
+
+    // 3. دمج الزرار في حاوية واحدة (Flex) لضمان التنسيق
+    return `
+        <div style="display:flex; gap:8px; width:100%; align-items:center;">
+            ${printBtn}
+            <div style="flex-grow:1;">${actionBtn}</div>
+        </div>
+    `;
 }
 
 async function updateStatus(id, newStatus) {
@@ -182,4 +202,40 @@ async function confirmAssignDriver() {
         console.error("خطأ أثناء تعيين المندوب:", err);
         alert("حدث خطأ أثناء تعيين المندوب");
     }
+}
+
+async function printOrder(orderId) {
+    // 1. جلب بيانات الأوردر من المصفوفة المحفوظة عندنا
+    // ملاحظة: تأكدي أن loadOrders تحفظ البيانات في متغير اسمه allOrders
+    const order = allOrders.find(o => o.id === orderId);
+    if (!order) return;
+
+    // 2. تعبئة بيانات الفاتورة في القسم المخفي
+    document.getElementById('p-order-code').innerText = `رقم الطلب: ${order.order_code}`;
+    document.getElementById('p-date').innerText = new Date(order.created_at).toLocaleString('ar-EG');
+    document.getElementById('p-cust-name').innerText = order.customer_name;
+    document.getElementById('p-cust-addr').innerText = order.customer_address || 'استلام من المطبخ';
+    document.getElementById('p-cust-phone').innerText = order.customer_phone;
+    document.getElementById('p-total').innerText = order.total_amount;
+
+    const itemsBody = document.getElementById('p-items');
+    itemsBody.innerHTML = '';
+    
+    if (order.items) {
+        let items = order.items;
+        if (typeof items === 'string') items = JSON.parse(items);
+        
+        items.forEach(item => {
+            itemsBody.innerHTML += `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>${(item.price * item.quantity)} ج</td>
+                </tr>
+            `;
+        });
+    }
+
+    // 3. أمر الطباعة
+    window.print();
 }
