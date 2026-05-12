@@ -747,3 +747,28 @@ body {
 .btn-deliver:active {
     transform: scale(0.98);
 }
+
+
+/* تنسيق بون الطباعة - يظهر فقط عند الطباعة */
+@media print {
+    body * { visibility: hidden; } /* إخفاء كل شيء في الصفحة */
+    #print-section, #print-section * { visibility: visible; } /* إظهار منطقة الطباعة فقط */
+    #print-section {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 80mm; /* عرض ورق حراري قياسي */
+        padding: 5mm;
+        direction: rtl;
+        font-family: 'Cairo', sans-serif;
+    }
+}
+
+/* تنسيق شكل الفاتورة على الشاشة (مخفية) */
+#print-section { display: none; }
+@media print { #print-section { display: block; } }
+
+.receipt-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+.receipt-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+.receipt-table th { border-bottom: 1px solid #000; text-align: right; }
+.receipt-footer { border-top: 1px dashed #000; padding-top: 10px; text-align: center; margin-top: 10px; }
