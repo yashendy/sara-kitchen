@@ -12,19 +12,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadOrders() {
     try {
+        // السحر هنا: بنجيب الأوردر ومعاه اسم المندوب المرتبط بيه
         const { data: orders, error } = await window.supabaseClient
             .from('orders')
-            .select('*')
+            .select(`
+                *,
+                delivery_drivers (name)
+            `)
             .order('created_at', { ascending: false });
 
         if (error) throw error;
-
         renderBoard(orders);
     } catch (err) {
         console.error("Error loading orders:", err);
     }
 }
-
 function renderBoard(orders) {
     const statuses = ['PENDING', 'PREPARING', 'WITH_DRIVER', 'DELIVERED'];
     
@@ -107,11 +109,28 @@ async function updateStatus(id, newStatus) {
 
 // إدارة المندوبين
 async function loadDrivers() {
-    const { data } = await window.supabaseClient.from('drivers').select('*').eq('is_active', true);
-    const select = document.getElementById('driverSelect');
-    data?.forEach(d => {
-        select.innerHTML += `<option value="${d.id}">${d.name}</option>`;
-    });
+    try {
+        // التعديل هنا: استخدام الجدول الصحيح بناءً على الهيكل
+        const { data, error } = await window.supabaseClient
+            .from('delivery_drivers')
+            .select('*');
+
+        if (error) throw error;
+
+        const select = document.getElementById('driverSelect');
+        if (!select) return;
+
+        select.innerHTML = '<option value="">اختر المندوب...</option>';
+        if (data && data.length > 0) {
+            data.forEach(d => {
+                // بنعرض اسم المندوب (أو اليوزرنيم) وبنخزن الـ ID
+                const driverName = d.name || d.username || d.full_name || `مندوب رقم ${d.id}`;
+                select.innerHTML += `<option value="${d.id}">${driverName}</option>`;
+            });
+        }
+    } catch (err) {
+        console.error("خطأ في تحميل المندوبين:", err);
+    }
 }
 
 function openDriverModal(orderId) {
@@ -124,9 +143,26 @@ function closeDriverModal() {
 }
 
 async function confirmAssignDriver() {
-    const driverId = document.getElementById('driverSelect').value;
-    if (!driverId) return alert("اختر مندوباً");
+    const driverSelect = document.getElementById('driverSelect');
+    const driverId = driverSelect.value;
 
-    await updateStatus(selectedOrderId, 'WITH_DRIVER');
-    closeDriverModal();
+    if (!driverId) return alert("يرجى اختيار مندوب أولاً");
+
+    try {
+        const { error } = await window.supabaseClient
+            .from('orders')
+            .update({ 
+                status: 'WITH_DRIVER',
+                driver_id: parseInt(driverId) // التعديل هنا: بنحفظ رقم المندوب مش اسمه
+            })
+            .eq('id', selectedOrderId);
+
+        if (error) throw error;
+        
+        closeDriverModal();
+        await loadOrders(); // تحديث اللوحة فوراً
+    } catch (err) {
+        console.error("خطأ أثناء تعيين المندوب:", err);
+        alert("حدث خطأ أثناء تعيين المندوب");
+    }
 }
