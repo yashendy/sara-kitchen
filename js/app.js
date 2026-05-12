@@ -23,14 +23,24 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 window.handleLogin = async (phone, password) => {
     try {
+        // استخدام maybeSingle يمنع خطأ 406 لو الرقم مش موجود
         const { data: user, error } = await window.supabaseClient
             .from('users')
             .select('*')
             .eq('phone', phone)
-            .eq('password', password) // ربطناها بحقل password اللي في الداتا بيز بتاعتك
-            .single();
+            .maybeSingle();
 
-        if (error || !user) throw new Error("رقم الهاتف أو كلمة المرور غير صحيحة");
+        if (error) throw new Error("حدث خطأ في الاتصال بقاعدة البيانات.");
+        
+        if (!user) {
+            throw new Error("رقم الهاتف غير مسجل لدينا، يرجى إنشاء حساب.");
+        }
+
+        // فحص كلمة المرور (سواء كانت في خانة password أو password_hash)
+        if (user.password !== password && user.password_hash !== password) {
+            throw new Error("كلمة المرور غير صحيحة ❌");
+        }
+
         if (!user.is_active) throw new Error("هذا الحساب غير مفعل حالياً.");
 
         // حفظ الجلسة
@@ -50,18 +60,25 @@ window.handleLogin = async (phone, password) => {
             window.location.href = 'index.html';
         }
     } catch (err) {
-        alert(err.message);
+        alert(err.message); // هيعرض الرسالة للمستخدم في نافذة منبثقة بدل كونسول المتصفح
     }
 };
 
 window.handleRegister = async (userData) => {
     try {
-        const { data: existing } = await window.supabaseClient.from('users').select('id').eq('phone', userData.phone).single();
+        const { data: existing } = await window.supabaseClient
+            .from('users')
+            .select('id')
+            .eq('phone', userData.phone)
+            .maybeSingle();
+            
         if (existing) throw new Error("هذا الرقم مسجل بالفعل، جرب تسجيل الدخول.");
 
+        // حفظنا الباسورد في الخانتين عشان نتفادى قيود قاعدة البيانات (NOT NULL)
         const { error } = await window.supabaseClient.from('users').insert([{
             full_name: userData.name,
             phone: userData.phone,
+            password_hash: userData.password, 
             password: userData.password,
             address: userData.address,
             role: 'CUSTOMER',
@@ -75,12 +92,6 @@ window.handleRegister = async (userData) => {
     } catch (err) {
         alert(err.message);
     }
-};
-
-window.handleLogout = () => {
-    sessionStorage.clear();
-    alert("تم تسجيل الخروج بنجاح 👋");
-    window.location.href = 'index.html';
 };
 
 // ==========================================
