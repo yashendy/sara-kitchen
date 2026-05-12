@@ -1,11 +1,16 @@
 // js/cart.js
 
-// متغيرات عامة لحفظ الكوبونات وإعدادات المتجر
+// متغيرات عامة لحفظ الكوبونات وإعدادات المتجر ونقاط الولاء
 let appliedCoupon = null; 
 let storeSettings = {
     bulk_threshold: 500, // قيم افتراضية
-    bulk_discount_percent: 10
+    bulk_discount_percent: 10,
+    discount_per_10_points: 1
 };
+
+let userLoyaltyPoints = 0;
+let loyaltyDiscountValue = 0;
+let isPointsApplied = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // جلب إعدادات المتجر أولاً لتفعيل الخصم التلقائي
@@ -113,6 +118,15 @@ window.removeFromCart = (index) => {
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
     cart.splice(index, 1);
     localStorage.setItem('cart', JSON.stringify(cart));
+    
+    // لو حذفنا حاجة، نلغي خصم النقاط عشان يحسبه من جديد لو حب
+    isPointsApplied = false;
+    loyaltyDiscountValue = 0;
+    const usePointsSection = document.getElementById('use-points-section');
+    if(usePointsSection) usePointsSection.style.display = 'none';
+    const msgEl = document.getElementById('loyalty-msg');
+    if(msgEl) msgEl.innerText = '';
+    
     renderCart(); 
 };
 
@@ -154,6 +168,7 @@ window.updateTotalWithDelivery = () => {
     const zoneEl = document.getElementById('delivery-zone');
     const zoneValue = zoneEl ? zoneEl.value : '0';
     
+    // -- 1. حساب التوصيل --
     let deliveryCost = 0;
     const costEl = document.getElementById('delivery-cost');
     if (deliveryType === 'DELIVERY') {
@@ -168,6 +183,7 @@ window.updateTotalWithDelivery = () => {
         if(costEl) costEl.innerText = "0.00 ج.م";
     }
 
+    // -- 2. حساب خصم الـ VIP التلقائي --
     let bulkDiscountValue = 0;
     const bulkRow = document.getElementById('bulk-discount-row');
     const bulkVal = document.getElementById('bulk-discount-val');
@@ -181,6 +197,7 @@ window.updateTotalWithDelivery = () => {
         bulkDiscountValue = 0;
     }
 
+    // -- 3. حساب خصم الكوبون --
     let couponDiscountValue = 0;
     const couponDisplay = document.getElementById('discount-display');
     const couponAmount = document.getElementById('discount-amount');
@@ -197,8 +214,7 @@ window.updateTotalWithDelivery = () => {
         if(couponDisplay) couponDisplay.style.display = 'none';
     }
 
-    let totalDiscounts = bulkDiscountValue + couponDiscountValue;
-    // -- حساب خصم النقاط --
+    // -- 4. حساب خصم نقاط الولاء --
     const loyaltyRow = document.getElementById('loyalty-discount-row');
     const loyaltyVal = document.getElementById('loyalty-discount-val');
     
@@ -209,7 +225,7 @@ window.updateTotalWithDelivery = () => {
         if(loyaltyRow) loyaltyRow.style.display = 'none';
     }
 
-    // تعديل إجمالي الخصومات ليصبح: خصم VIP + كوبون + نقاط الولاء
+    // -- 5. تجميع كل الخصومات وحساب النهائي --
     let totalDiscounts = bulkDiscountValue + couponDiscountValue + (isPointsApplied ? loyaltyDiscountValue : 0);
     let finalTotal = (subtotal - totalDiscounts) + deliveryCost;
 
@@ -275,109 +291,21 @@ window.removeCoupon = () => {
 };
 
 /**
- * 8. معالجة إرسال الطلب
+ * 8. دوال التحقق من نقاط الولاء وتطبيقها
  */
-async function handleOrderSubmit(e) {
-    e.preventDefault();
-    
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    if (cart.length === 0) {
-        alert("سلتك فارغة!");
-        return;
-    }
-
-    const typeEl = document.getElementById('delivery-type');
-    const deliveryType = typeEl ? typeEl.value : 'DELIVERY';
-    const zoneEl = document.getElementById('delivery-zone');
-    const zoneValue = zoneEl ? zoneEl.value : '0';
-    
-    const totalEl = document.getElementById('total-price');
-    const finalTotalText = totalEl ? totalEl.innerText : "0";
-    const finalTotal = parseFloat(finalTotalText.replace(" ج.م", ""));
-
-    const addressInput = document.getElementById('cust-address');
-    
-    if (deliveryType === 'DELIVERY') {
-        if (!addressInput || addressInput.value.trim() === '') {
-            alert("يرجى كتابة العنوان بالتفصيل لتوصيل الطلب!");
-            if (addressInput) addressInput.focus();
-            return; 
-        }
-    }
-
-    const customerAddress = (deliveryType === 'PICKUP') 
-        ? 'استلام من المطبخ' 
-        : addressInput.value.trim();
-
-    let commission = 0;
-    if (deliveryType === 'DELIVERY' && zoneValue !== 'custom') {
-        commission = parseFloat(zoneValue) || 0;
-    }
-
-    const orderData = {
-        customer_name: document.getElementById('cust-name').value,
-        customer_phone: document.getElementById('cust-phone').value,
-        customer_address: customerAddress,
-        total_amount: finalTotal,
-        delivery_commission: commission, 
-        status: 'PENDING',
-        order_code: 'S' + Math.floor(1000 + Math.random() * 9000),
-        items: cart, 
-        created_at: new Date().toISOString()
-    };
-
-    if(appliedCoupon) {
-        orderData.used_coupon_code = appliedCoupon.code;
-    }
-
-    try {
-        const { error } = await window.supabaseClient
-            .from('orders')
-            .insert([orderData]);
-
-        if (error) throw error;
-
-        if(appliedCoupon) {
-             window.supabaseClient.rpc('increment_coupon_usage', { coupon_id: appliedCoupon.id });
-        }
-
-        alert("تم استلام طلبك بنجاح يا فنان! 🥘\nكود الطلب الخاص بك هو: " + orderData.order_code);
-        
-        localStorage.removeItem('cart');
-        if (typeof updateCartCount === 'function') {
-            updateCartCount();
-        }
-
-        window.location.href = `track.html?code=${orderData.order_code}`;
-
-    } catch (err) {
-        console.error("Submission Error:", err);
-        alert("حدث خطأ أثناء إرسال الطلب: " + err.message);
-    }
-}
-
-// متغيرات الولاء
-let userLoyaltyPoints = 0;
-let loyaltyDiscountValue = 0;
-let isPointsApplied = false;
-
-// دالة التحقق من النقاط برقم الهاتف
 window.checkLoyaltyPoints = async () => {
     const phone = document.getElementById('loyalty-phone').value.trim();
     const msgEl = document.getElementById('loyalty-msg');
     const usePointsSection = document.getElementById('use-points-section');
     
     if (!phone) {
-        msgEl.innerText = "يرجى كتابة رقم الهاتف أولاً.";
-        msgEl.style.color = "red";
+        if(msgEl) { msgEl.innerText = "يرجى كتابة رقم الهاتف أولاً."; msgEl.style.color = "red"; }
         return;
     }
 
-    msgEl.innerText = "جاري التحقق... ⏳";
-    msgEl.style.color = "#64748b";
+    if(msgEl) { msgEl.innerText = "جاري التحقق... ⏳"; msgEl.style.color = "#64748b"; }
 
     try {
-        // نبحث عن العميل برقم تليفونه في جدول users
         const { data: user, error } = await window.supabaseClient
             .from('users')
             .select('full_name, loyalty_points')
@@ -385,40 +313,18 @@ window.checkLoyaltyPoints = async () => {
             .single();
 
         if (error || !user) {
-            msgEl.innerText = "لا يوجد حساب سابق بهذا الرقم، اطلب الآن لتبدأ بجمع النقاط! 🎁";
-            msgEl.style.color = "#64748b";
-            usePointsSection.style.display = 'none';
+            if(msgEl) { msgEl.innerText = "لا يوجد حساب سابق بهذا الرقم، اطلب الآن لتبدأ بجمع النقاط! 🎁"; msgEl.style.color = "#64748b"; }
+            if(usePointsSection) usePointsSection.style.display = 'none';
             return;
         }
 
         userLoyaltyPoints = user.loyalty_points || 0;
 
         if (userLoyaltyPoints < 10) {
-            msgEl.innerText = `أهلاً ${user.full_name || ''} 👋.. رصيدك الحالي (${userLoyaltyPoints} نقطة) غير كافٍ للاستبدال. (الحد الأدنى 10 نقاط)`;
-            msgEl.style.color = "#d97706";
-            usePointsSection.style.display = 'none';
+            if(msgEl) { msgEl.innerText = `أهلاً ${user.full_name || ''} 👋.. رصيدك الحالي (${userLoyaltyPoints} نقطة) غير كافٍ للاستبدال.`; msgEl.style.color = "#d97706"; }
+            if(usePointsSection) usePointsSection.style.display = 'none';
         } else {
-            // نحسب الفلوس بناءً على الإعدادات اللي عملتيها في صفحة الأدمن
-            // مثلا لو كل 10 نقط بجنيه، وهو معاه 50 نقطة = 5 جنيه خصم
             const pointsValue = Math.floor(userLoyaltyPoints / 10) * storeSettings.discount_per_10_points;
             
-            msgEl.innerText = `أهلاً ${user.full_name || ''} 👋.. لديك ${userLoyaltyPoints} نقطة تساوي خصم (${pointsValue} ج.م) 🎉`;
-            msgEl.style.color = "green";
-            usePointsSection.style.display = 'block';
-            
-            loyaltyDiscountValue = pointsValue;
-        }
-
-    } catch (err) {
-        console.error(err);
-        msgEl.innerText = "حدث خطأ أثناء التحقق من النقاط.";
-    }
-};
-
-// دالة تطبيق الخصم
-window.applyLoyaltyPoints = () => {
-    isPointsApplied = true;
-    document.getElementById('use-points-section').style.display = 'none';
-    document.getElementById('loyalty-msg').innerText = "✅ تم تطبيق خصم النقاط بنجاح!";
-    updateTotalWithDelivery(); // نعيد حساب الإجمالي عشان نخصم الفلوس
-};
+            if(msgEl) { msgEl.innerText = `أهلاً ${user.full_name || ''} 👋.. لديك ${userLoyaltyPoints} نقطة تساوي خصم (${pointsValue} ج.م) 🎉`; msgEl.style.color = "green"; }
+            if(usePointsSection) use
