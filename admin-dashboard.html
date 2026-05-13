@@ -65,24 +65,47 @@
             <button class="btn-filter" onclick="window.loadDashboardStats()">تحديث التقرير 🔄</button>
         </div>
 
-        <div class="financial-stats">
-            <div class="f-card sales">
-                <h3>مبيعات المطبخ (بدون توصيل)</h3>
-                <div class="f-val" id="stat-sales" style="color: #3b82f6;">0 ج</div>
-            </div>
-            <div class="f-card net">
-                <h3>الكاش بالخزينة (مُستلم)</h3>
-                <div class="f-val" id="stat-net" style="color: #10b981;">0 ج</div>
-            </div>
-            <div class="f-card pending">
-                <h3>أرصدة بالخارج (مع المناديب)</h3>
-                <div class="f-val" id="stat-pending" style="color: #ef4444;">0 ج</div>
-            </div>
-            <div class="f-card comm">
-                <h3>عمولات التوصيل</h3>
-                <div class="f-val" id="stat-commissions" style="color: #f59e0b;">0 ج</div>
-            </div>
-        </div>
+      <style>
+    /* ألوان الكروت عشان تميزي كل رقم بمجرد النظر */
+    .f-card.sales::before { background: #3b82f6; }   /* أزرق: مبيعات */
+    .f-card.expense::before { background: #ef4444; } /* أحمر: منصرفات */
+    .f-card.profit::before { background: #8b5cf6; }  /* بنفسجي: أرباح */
+    .f-card.safe::before { background: #10b981; }    /* أخضر: كاش الخزنة */
+    .f-card.pending::before { background: #f59e0b; } /* برتقالي: فلوس بره */
+    .f-card.comm::before { background: #64748b; }    /* رمادي: عمولات المناديب */
+</style>
+
+<div class="financial-stats">
+    <div class="f-card sales">
+        <h3>مبيعات المطبخ (إيرادات)</h3>
+        <div class="f-val" id="stat-sales" style="color: #3b82f6;">0 ج</div>
+    </div>
+    
+    <div class="f-card expense">
+        <h3>المصروفات (مشتريات)</h3>
+        <div class="f-val" id="stat-expenses" style="color: #ef4444;">0 ج</div>
+    </div>
+    
+    <div class="f-card profit" style="background: #f3e8ff; border: 1px solid #d8b4fe;">
+        <h3 style="color: #6b21a8;">صافي الربح الفعلي</h3>
+        <div class="f-val" id="stat-profit" style="color: #7e22ce;">0 ج</div>
+    </div>
+
+    <div class="f-card safe">
+        <h3>الكاش بالدرج (السيولة)</h3>
+        <div class="f-val" id="stat-safe" style="color: #10b981;">0 ج</div>
+    </div>
+
+    <div class="f-card pending">
+        <h3>أرصدة بالخارج (مع المناديب)</h3>
+        <div class="f-val" id="stat-pending" style="color: #f59e0b;">0 ج</div>
+    </div>
+
+    <div class="f-card comm">
+        <h3>عمولات التوصيل</h3>
+        <div class="f-val" id="stat-commissions" style="color: #64748b;">0 ج</div>
+    </div>
+</div>
 
         <div class="section-header">
             <h2>⚙️ إدارة العمليات وحالة الطلبات</h2>
