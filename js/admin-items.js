@@ -1,5 +1,5 @@
 // js/admin-items.js
-let allProducts = []; // 👈 السطر ده اللي كان ناقص عشان يحفظ الأصناف والأحجام
+let allProducts = []; // هنحفظ فيه كل الأصناف عشان نفلتر منها ونستخدمها في التعديل
 let allCategories = [];
 let currentEditingItemId = null;
 let selectedImageFile = null;
@@ -8,6 +8,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     // تحميل التصنيفات والأصناف أول ما الصفحة تفتح
     await loadCategories();
     await loadItems();
+
+    // ربط الفلترة ومربع البحث
+    const searchInput = document.getElementById('search-input');
+    const categoryFilter = document.getElementById('item-category-filter');
+    if (searchInput) searchInput.addEventListener('input', applyAdminFilters);
+    if (categoryFilter) categoryFilter.addEventListener('change', applyAdminFilters);
 
     // ربط أزرار النوافذ المنبثقة
     document.getElementById('btn-add-item').addEventListener('click', openAddItemModal);
@@ -41,12 +47,12 @@ async function loadCategories() {
         const filterSelect = document.getElementById('item-category-filter');
         const formSelect = document.getElementById('itemCategory');
         
-        filterSelect.innerHTML = '<option value="ALL">كل التصنيفات</option>';
-        formSelect.innerHTML = '<option value="">اختاري التصنيف</option>';
+        if (filterSelect) filterSelect.innerHTML = '<option value="ALL">كل التصنيفات</option>';
+        if (formSelect) formSelect.innerHTML = '<option value="">اختاري التصنيف</option>';
         
         data.forEach(cat => {
-            filterSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
-            formSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+            if (filterSelect) filterSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+            if (formSelect) formSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
         });
     } catch (err) {
         console.error("خطأ في تحميل التصنيفات", err);
@@ -122,7 +128,7 @@ window.getVariantsData = () => {
 };
 
 // ==========================================
-// 3. إدارة الأصناف
+// 3. إدارة الأصناف والفلترة (تم التحديث)
 // ==========================================
 async function loadItems() {
     const container = document.getElementById('admin-items-container');
@@ -135,44 +141,79 @@ async function loadItems() {
         
         if (error) throw error;
         
-        allProducts = data; // 👈 حفظ البيانات هنا لتستخدمها دالة التعديل
-        
-        if(data.length === 0) {
-            container.innerHTML = '<p style="text-align:center; padding:20px;">لا توجد أصناف، أضيفي صنفك الأول! 🍲</p>';
-            return;
-        }
+        allProducts = data || []; // حفظ كل البيانات للفلترة والتعديل
+        renderItemsTable(allProducts); // رسم الجدول بكل البيانات في البداية
 
-        let html = '<table class="admin-table"><thead><tr><th>صورة</th><th>الاسم</th><th>السعر / الأحجام</th><th>التصنيف</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>';
-        
-        data.forEach(item => {
-            let priceDisplay = `<strong>${item.price} ج.م</strong>`;
-            if (item.variants && item.variants.length > 0) {
-                priceDisplay = `<span style="color:#d97706; font-weight:bold; font-size:0.9rem;">له ${item.variants.length} أحجام</span>`;
-            }
-
-            html += `
-                <tr>
-                    <td><img src="${item.image_url || 'default-food.png'}" style="width:50px; height:50px; border-radius:8px; object-fit:cover; border:1px solid #eee;"></td>
-                    <td><strong>${item.name}</strong></td>
-                    <td>${priceDisplay}</td>
-                    <td><span style="background:#e2e8f0; padding:3px 8px; border-radius:12px; font-size:0.8rem;">${item.categories ? item.categories.name : 'بدون'}</span></td>
-                    <td>
-                        ${item.is_available ? '<span class="badge-tags">متاح ✅</span>' : '<span class="badge-calories">غير متاح ❌</span>'}
-                    </td>
-                    <td>
-                        <button class="btn-primary" style="padding:5px 10px; font-size:0.8rem;" onclick="editItem(${item.id})">تعديل ✏️</button>
-                        <button class="btn-secondary" style="background:#ef4444; color:white; padding:5px 10px; border:none; font-size:0.8rem;" onclick="deleteItem(${item.id})">حذف 🗑️</button>
-                    </td>
-                </tr>
-            `;
-        });
-        html += '</tbody></table>';
-        container.innerHTML = html;
     } catch (err) {
         console.error("خطأ في تحميل الأصناف", err);
+        container.innerHTML = '<p style="text-align:center; color:red;">حدث خطأ أثناء تحميل القائمة.</p>';
     }
 }
 
+// دالة الفلترة الذكية
+function applyAdminFilters() {
+    const searchInput = document.getElementById('search-input');
+    const catFilter = document.getElementById('item-category-filter');
+    
+    const searchText = searchInput ? searchInput.value.toLowerCase() : '';
+    const catId = catFilter ? catFilter.value : 'ALL';
+
+    let filtered = allProducts;
+
+    // 1. فلترة بالاسم
+    if (searchText) {
+        filtered = filtered.filter(item => item.name.toLowerCase().includes(searchText));
+    }
+
+    // 2. فلترة بالتصنيف
+    if (catId && catId !== 'ALL') {
+        filtered = filtered.filter(item => item.category_id == catId);
+    }
+
+    // عرض النتيجة
+    renderItemsTable(filtered);
+}
+
+// دالة رسم الجدول المستقلة
+function renderItemsTable(items) {
+    const container = document.getElementById('admin-items-container');
+    
+    if(items.length === 0) {
+        container.innerHTML = '<p style="text-align:center; padding:20px;">لا توجد أصناف تطابق بحثك. 🍲</p>';
+        return;
+    }
+
+    let html = '<table class="admin-table"><thead><tr><th>صورة</th><th>الاسم</th><th>السعر / الأحجام</th><th>التصنيف</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>';
+    
+    items.forEach(item => {
+        let priceDisplay = `<strong>${item.price} ج.م</strong>`;
+        if (item.variants && item.variants.length > 0) {
+            priceDisplay = `<span style="color:#d97706; font-weight:bold; font-size:0.9rem;">له ${item.variants.length} أحجام</span>`;
+        }
+
+        html += `
+            <tr>
+                <td><img src="${item.image_url || 'default-food.png'}" style="width:50px; height:50px; border-radius:8px; object-fit:cover; border:1px solid #eee;"></td>
+                <td><strong>${item.name}</strong></td>
+                <td>${priceDisplay}</td>
+                <td><span style="background:#e2e8f0; padding:3px 8px; border-radius:12px; font-size:0.8rem;">${item.categories ? item.categories.name : 'بدون'}</span></td>
+                <td>
+                    ${item.is_available ? '<span class="badge-tags">متاح ✅</span>' : '<span class="badge-calories">غير متاح ❌</span>'}
+                </td>
+                <td>
+                    <button class="btn-primary" style="padding:5px 10px; font-size:0.8rem;" onclick="editItem(${item.id})">تعديل ✏️</button>
+                    <button class="btn-secondary" style="background:#ef4444; color:white; padding:5px 10px; border:none; font-size:0.8rem;" onclick="deleteItem(${item.id})">حذف 🗑️</button>
+                </td>
+            </tr>
+        `;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+// ==========================================
+// 4. النوافذ المنبثقة وحفظ البيانات
+// ==========================================
 function openAddItemModal() {
     currentEditingItemId = null;
     document.getElementById('itemForm').reset();
@@ -185,7 +226,6 @@ function openAddItemModal() {
 }
 
 window.editItem = (itemId) => {
-    // البحث عن الصنف في المصفوفة المخزنة بالذاكرة
     const item = allProducts.find(p => p.id === itemId);
     if (!item) return;
 
@@ -202,7 +242,6 @@ window.editItem = (itemId) => {
     document.getElementById('itemAvailable').checked = item.is_available;
     document.getElementById('itemImageUrl').value = item.image_url || '';
     
-    // 👈 تفريغ الأحجام القديمة ثم إعادة رسمها بدقة
     const varContainer = document.getElementById('variants-container');
     varContainer.innerHTML = ''; 
     
@@ -233,7 +272,6 @@ function handleImageSelect(e) {
     document.getElementById('itemImageFileName').innerText = file.name;
 }
 
-// الدالة الأهم: حفظ الصنف في قاعدة البيانات
 async function saveItem(e) {
     e.preventDefault();
     const btn = document.getElementById('saveItemBtn');
@@ -243,7 +281,6 @@ async function saveItem(e) {
     try {
         let finalImageUrl = document.getElementById('itemImageUrl').value;
 
-        // رفع الصورة لو اختار ملف
         if (selectedImageFile) {
             const fileExt = selectedImageFile.name.split('.').pop();
             const fileName = `${Date.now()}.${fileExt}`;
@@ -254,7 +291,6 @@ async function saveItem(e) {
                 
             if (uploadError) throw uploadError;
 
-            // جلب الرابط العام للصورة بعد الرفع
             const { data } = window.supabaseClient.storage
                 .from('product-images')
                 .getPublicUrl(fileName);
@@ -262,10 +298,8 @@ async function saveItem(e) {
             finalImageUrl = data.publicUrl;
         }
 
-        // تجميع الأحجام
         const itemVariants = getVariantsData();
 
-        // تجهيز البيانات للحفظ
         const payload = {
             name: document.getElementById('itemName').value,
             price: parseFloat(document.getElementById('itemPrice').value) || 0,
@@ -276,7 +310,7 @@ async function saveItem(e) {
             in_offer: document.getElementById('itemInOffer').checked,
             is_available: document.getElementById('itemAvailable').checked,
             image_url: finalImageUrl,
-            variants: itemVariants // 👈 السحر هنا، حفظنا الأحجام كـ JSON
+            variants: itemVariants 
         };
 
         if (currentEditingItemId) {
@@ -289,6 +323,13 @@ async function saveItem(e) {
 
         closeItemModal();
         await loadItems();
+        
+        // إعادة تهيئة مربع البحث بعد الحفظ لضمان عرض كل البيانات
+        const searchInput = document.getElementById('search-input');
+        if(searchInput) searchInput.value = '';
+        const catFilter = document.getElementById('item-category-filter');
+        if(catFilter) catFilter.value = 'ALL';
+        
         alert('تم حفظ الصنف بنجاح! ✅');
     } catch (err) {
         console.error("Save Error:", err);
