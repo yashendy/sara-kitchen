@@ -108,23 +108,25 @@ function setupDynamicNavbar() {
 
     if (isLoggedIn) {
         if (userRole === 'ADMIN') {
+            // التعديل الجديد للأدمن: إضافة المخزن والمصروفات
             navLinksContainer.innerHTML = `
                 <a href="index.html">الرئيسية</a>
                 <span style="color: #475569; margin: 0 10px;">|</span>
-                <a href="admin-dashboard.html">لوحة الأدمن</a>
+                <a href="admin-dashboard.html">الداشبورد</a>
                 <a href="admin-orders.html">الطلبات</a>
                 <a href="admin-items.html">الأصناف</a>
-                <a href="admin-offers.html">العروض والولاء</a>
                 <a href="admin-drivers.html">المندوبين</a>
+                <a href="admin-inventory.html" style="color: var(--primary); font-weight:bold;">المخزن 📦</a>
                 <a href="#" onclick="window.handleLogout()" style="color:#ef4444; font-weight:bold;">خروج 🚪</a>
             `;
         } else if (userRole === 'DRIVER') {
+            // واجهة المندوب: بسيطة وسريعة
             navLinksContainer.innerHTML = `
                 <a href="driver-orders.html">طلبات التوصيل 🚚</a>
                 <a href="#" onclick="window.handleLogout()" style="color:#ef4444; font-weight:bold;">خروج 🚪</a>
             `;
         } else {
-            // عميل مسجل
+            // عميل مسجل: تظهر له بياناته الشخصية والسلة
             navLinksContainer.innerHTML = `
                 <a href="index.html">الرئيسية</a>
                 <a href="menu.html">القائمة</a>
@@ -134,10 +136,11 @@ function setupDynamicNavbar() {
                 <span style="color: var(--primary); font-weight:bold;">أهلاً، ${userName.split(' ')[0]} 👋</span>
                 <a href="#" onclick="window.handleLogout()" style="color:#ef4444; font-weight:bold;">خروج 🚪</a>
             `;
+            // تحديث عداد السلة لو الوظيفة موجودة
             if (typeof window.updateCartCount === 'function') window.updateCartCount(); 
         }
     } else {
-        // زائر غير مسجل
+        // زائر غير مسجل: يرى خيار تسجيل الدخول
         navLinksContainer.innerHTML = `
             <a href="index.html">الرئيسية</a>
             <a href="menu.html">القائمة</a>
