@@ -31,27 +31,34 @@ async function refreshDriverData(userId) {
 
         if (error) throw error;
 
-        // 2. الحسابات المحاسبية (المحفظة)
-        let cashInHand = 0;   
-        let myEarnings = 0;    
+       // 2. الحسابات المحاسبية (المحفظة)
+        let totalCashCollected = 0;   
+        let myEarnings = 0;
+        let alreadyPaidToAdmin = 0;
         
-        // السر الثاني: فلترة الحالات الصح (WITH_DRIVER زي ما موجودة في لوحة الأدمن)
-        const deliveredOrders = orders.filter(o => o.status === 'DELIVERED' && o.settled_with_admin === false);
+        const deliveredOrders = orders.filter(o => o.status === 'DELIVERED');
         const activeOrders = orders.filter(o => o.status === 'WITH_DRIVER' || o.status === 'PENDING' || o.status === 'PREPARING');
 
         deliveredOrders.forEach(o => {
-            cashInHand += (o.total_amount + (o.delivery_commission || 30));
-            myEarnings += (o.delivery_commission || 30);
+            const comm = o.delivery_commission || 30;
+            totalCashCollected += (o.total_amount + comm);
+            myEarnings += comm;
+            alreadyPaidToAdmin += (o.admin_received_amount || 0); // الفلوس اللي وردها
         });
+
+        // اللي في جيبه = اللي حصله - اللي ورده
+        const cashWithMe = totalCashCollected - alreadyPaidToAdmin;
+        // اللي عليه للمطبخ = (إجمالي فواتير المطبخ) - اللي ورده
+        const netToKitchen = (totalCashCollected - myEarnings) - alreadyPaidToAdmin;
 
         // تحديث أرقام المحفظة في الواجهة
         const statCash = document.getElementById('stat-cash');
         const statEarn = document.getElementById('stat-earnings');
         const statNet = document.getElementById('stat-net');
 
-        if(statCash) statCash.innerText = `${cashInHand.toFixed(0)} ج`;
+        if(statCash) statCash.innerText = `${cashWithMe > 0 ? cashWithMe.toFixed(0) : 0} ج`;
         if(statEarn) statEarn.innerText = `${myEarnings.toFixed(0)} ج`;
-        if(statNet) statNet.innerText = `${(cashInHand - myEarnings).toFixed(0)} ج`;
+        if(statNet) statNet.innerText = `${netToKitchen > 0 ? netToKitchen.toFixed(0) : 0} ج`;
 
         // 3. عرض قائمة الطلبات النشطة
         if (activeOrders.length === 0) {
