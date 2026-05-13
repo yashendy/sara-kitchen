@@ -96,6 +96,8 @@ async function saveInventoryItem(e) {
 // القسم الثاني: إدارة المشتريات والديون
 // ==========================================
 
+// ابحثي عن دالة loadPurchasesData وحدثي الجزء اللي بيبني الجدول (tbody.innerHTML)
+
 async function loadPurchasesData() {
     try {
         const { data: purchases, error } = await window.supabaseClient
@@ -112,13 +114,14 @@ async function loadPurchasesData() {
         let totalRemainingDebt = 0;
 
         if (!purchases || purchases.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">لم يتم تسجيل أي مصروفات 💸</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">لم يتم تسجيل أي مصروفات 💸</td></tr>';
         } else {
             purchases.forEach(pur => {
                 totalPaidCash += (pur.paid_amount || 0);
                 totalRemainingDebt += (pur.remaining_debt || 0);
 
                 const dateStr = new Date(pur.purchase_date).toLocaleDateString('ar-EG');
+                const debt = pur.remaining_debt || 0;
                 
                 tbody.innerHTML += `
                     <tr>
@@ -130,15 +133,22 @@ async function loadPurchasesData() {
                         </td>
                         <td style="font-weight:bold;">${pur.total_cost} ج</td>
                         <td style="color:#10b981; font-weight:bold;">${pur.paid_amount} ج</td>
-                        <td style="color:#ef4444; font-weight:bold;">
-                            ${pur.remaining_debt > 0 ? pur.remaining_debt + ' ج' : 'خالص ✅'}
+                        <td style="color:${debt > 0 ? '#ef4444' : '#10b981'}; font-weight:bold;">
+                            ${debt > 0 ? debt + ' ج' : 'خالص ✅'}
+                        </td>
+                        <td>
+                            <button class="btn-primary" 
+                                    style="padding:5px 10px; font-size:0.8rem; background:${debt > 0 ? '#f59e0b' : '#cbd5e1'}; border:none;" 
+                                    onclick="payRemainingDebt(${pur.id}, ${debt})"
+                                    ${debt <= 0 ? 'disabled' : ''}>
+                                ${debt > 0 ? 'دفع 💰' : 'مُسدد'}
+                            </button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        // تحديث الإحصائيات المالية فوق
         document.getElementById('total-expenses').innerText = `${totalPaidCash} ج`;
         document.getElementById('total-debts').innerText = `${totalRemainingDebt} ج`;
 
@@ -146,6 +156,47 @@ async function loadPurchasesData() {
         console.error("خطأ في جلب المشتريات:", err);
     }
 }
+
+// الدالة الجديدة لتسديد الديون للموردين
+window.payRemainingDebt = async (purchaseId, currentDebt) => {
+    const amountStr = prompt(`المبلغ المتبقي للمورد: ${currentDebt} ج.م\nأدخلي المبلغ اللي هتدفعيه دلوقتي:`, currentDebt);
+    if (!amountStr) return;
+
+    const payAmount = parseFloat(amountStr);
+    if (isNaN(payAmount) || payAmount <= 0) return alert("يرجى إدخال مبلغ صحيح.");
+    if (payAmount > currentDebt) return alert("المبلغ المدخل أكبر من الدين المستحق!");
+
+    try {
+        // جلب البيانات الحالية للفاتورة
+        const { data: purchase, error: fetchErr } = await window.supabaseClient
+            .from('kitchen_purchases')
+            .select('paid_amount, remaining_debt')
+            .eq('id', purchaseId)
+            .single();
+
+        if (fetchErr) throw fetchErr;
+
+        const newPaid = purchase.paid_amount + payAmount;
+        const newDebt = purchase.remaining_debt - payAmount;
+
+        const { error: updateErr } = await window.supabaseClient
+            .from('kitchen_purchases')
+            .update({ 
+                paid_amount: newPaid, 
+                remaining_debt: newDebt 
+            })
+            .eq('id', purchaseId);
+
+        if (updateErr) throw updateErr;
+
+        alert("تم تسجيل الدفع وتحديث مديونية المورد بنجاح! ✅");
+        loadPurchasesData(); // تحديث الجدول فوراً
+
+    } catch (err) {
+        alert("حدث خطأ أثناء التحديث.");
+        console.error(err);
+    }
+};
 
 async function savePurchaseRecord(e) {
     e.preventDefault();
