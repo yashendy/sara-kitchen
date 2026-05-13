@@ -31,46 +31,74 @@ window.loadDashboardStats = async () => {
     endDateTime.setHours(23, 59, 59, 999);
 
     try {
-        const { data: orders, error } = await window.supabaseClient
+        // جلب إيرادات الطلبات
+        const { data: orders, error: oError } = await window.supabaseClient
             .from('orders')
-            .select('total_amount, delivery_commission, settled_with_admin')
+            .select('total_amount, delivery_commission, settled_with_admin, admin_received_amount, driver_id')
             .eq('status', 'DELIVERED')
             .gte('created_at', new Date(startDate).toISOString())
             .lte('created_at', endDateTime.toISOString());
 
-        if (error) throw error;
+        if (oError) throw oError;
 
+        // جلب منصرفات المخزن والمشتريات
+        const { data: purchases, error: pError } = await window.supabaseClient
+            .from('kitchen_purchases')
+            .select('total_cost, paid_amount')
+            .gte('purchase_date', new Date(startDate).toISOString())
+            .lte('purchase_date', endDateTime.toISOString());
+
+        if (pError) throw pError;
+
+        // متغيرات الحسابات
         let totalKitchenSales = 0; 
-        let totalCommissions = 0;  
-        let netInSafe = 0;         
+        let totalCommissions = 0;  // 👈 ده اللي بيحسب العمولات
+        let netInSafeFromOrders = 0;         
         let pendingOutside = 0;    
 
-      orders.forEach(order => {
+        // حسابات الإيرادات من الطلبات
+        orders.forEach(order => {
             const customerPaid = order.total_amount; 
             const driverCommission = order.delivery_commission || 0; 
             const kitchenShare = customerPaid - driverCommission; 
 
             totalKitchenSales += kitchenShare;
-            totalCommissions += driverCommission;
+            totalCommissions += driverCommission; // جمع العمولات
 
-            // لو الأوردر ده طالع من غير مندوب (استلام من المطبخ)، يبقى فلوسه دخلت الخزنة فوراً
             if (!order.driver_id) {
-                netInSafe += kitchenShare;
+                // استلام من المطبخ (كاش فوري)
+                netInSafeFromOrders += kitchenShare;
             } else {
-                // لو ليه مندوب، نقرأ الفلوس اللي إحنا استلمناها منه بس
+                // مع مندوب 
                 const receivedFromDriver = order.admin_received_amount || 0;
-                netInSafe += receivedFromDriver; 
+                netInSafeFromOrders += receivedFromDriver; 
                 pendingOutside += (kitchenShare - receivedFromDriver);
             }
         });
 
+        // حسابات المصروفات 
+        let totalExpenses = 0;
+        let totalPaidCashForExpenses = 0;
+
+        purchases.forEach(pur => {
+            totalExpenses += (pur.total_cost || 0); 
+            totalPaidCashForExpenses += (pur.paid_amount || 0); 
+        });
+
+        // النتائج النهائية
+        const finalNetProfit = totalKitchenSales - totalExpenses; 
+        const finalCashInSafe = netInSafeFromOrders - totalPaidCashForExpenses; 
+
+        // عرض الأرقام على الـ 6 كروت
         document.getElementById('stat-sales').innerText = totalKitchenSales.toFixed(0) + ' ج';
-        document.getElementById('stat-commissions').innerText = totalCommissions.toFixed(0) + ' ج';
-        document.getElementById('stat-net').innerText = netInSafe.toFixed(0) + ' ج';
+        document.getElementById('stat-expenses').innerText = totalExpenses.toFixed(0) + ' ج';
+        document.getElementById('stat-profit').innerText = finalNetProfit.toFixed(0) + ' ج';
+        document.getElementById('stat-safe').innerText = finalCashInSafe.toFixed(0) + ' ج';
         document.getElementById('stat-pending').innerText = pendingOutside.toFixed(0) + ' ج';
+        document.getElementById('stat-commissions').innerText = totalCommissions.toFixed(0) + ' ج'; // كارت العمولات
 
     } catch (err) {
-        console.error("خطأ في جلب تقارير الداشبورد:", err);
+        console.error("خطأ في حسابات الداشبورد:", err);
     }
 };
 
