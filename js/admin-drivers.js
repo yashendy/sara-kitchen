@@ -2,32 +2,25 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (sessionStorage.getItem('is_admin') !== 'true') {
-        window.location.href = 'admin-login.html';
+        window.location.href = 'login.html';
         return;
     }
-
     await loadDriversData();
-    setupForms();
 });
 
-// 1. الدالة المطورة لجلب المناديب وحساب "العهد المالية" (قبل وبعد التسوية)
 async function loadDriversData() {
     try {
         const { data: drivers, error: dError } = await window.supabaseClient
-            .from('users') // نعتمد على جدول users الموحد
+            .from('users')
             .select('*')
             .eq('role', 'DRIVER')
             .order('created_at', { ascending: false });
-
         if (dError) throw dError;
 
-        // جلب الطلبات المسلمة التي "لم يتم توريد كاشها للمطبخ بعد"
         const { data: orders, error: oError } = await window.supabaseClient
             .from('orders')
             .select('*')
-            .eq('status', 'DELIVERED')
-            .eq('settled_with_admin', false); // 👈 الميزة الجديدة
-
+            .eq('status', 'DELIVERED');
         if (oError) throw oError;
 
         const listBody = document.getElementById('drivers-list-body');
@@ -35,72 +28,169 @@ async function loadDriversData() {
         listBody.innerHTML = '';
 
         drivers.forEach(driver => {
-            // تصفية الطلبات الخاصة بالمندوب الحالي التي في عهدته
-            // ملاحظة: نربط بـ customer_phone حالياً أو driver_id إذا كان مسجلاً
-            const duesOrders = orders.filter(o => o.driver_id === driver.id || o.customer_phone === driver.phone);
+            const driverOrders = orders.filter(o => o.driver_id === driver.id || o.customer_phone === driver.phone);
             
-            // حساب "الكاش الإجمالي" و "صافي المطبخ"
-            let totalCash = 0;
+            let totalCashInHand = 0;
             let totalCommission = 0;
+            let alreadyPaidToAdmin = 0;
             
-            duesOrders.forEach(o => {
-                totalCash += (o.total_amount + (o.delivery_commission || 30));
-                totalCommission += (o.delivery_commission || 30);
+            driverOrders.forEach(o => {
+                const comm = o.delivery_commission || 30;
+                totalCashInHand += (o.total_amount + comm);
+                totalCommission += comm;
+                alreadyPaidToAdmin += (o.admin_received_amount || 0);
             });
 
-            const netToKitchen = totalCash - totalCommission;
+            // صافي المطبخ = (إجمالي الفواتير - العمولات) - اللي اتورد قبل كده
+            const totalKitchenShare = totalCashInHand - totalCommission;
+            const remainingBalance = totalKitchenShare - alreadyPaidToAdmin;
 
             listBody.innerHTML += `
                 <tr>
                     <td><strong>${driver.full_name}</strong></td>
                     <td>${driver.phone}</td>
+                    <td style="text-align:center; font-weight:bold; color:#3b82f6;">${driverOrders.length} طلبات</td>
                     <td style="text-align:center;">
-                        <span style="font-weight:bold; color:#3b82f6;">${duesOrders.length}</span> طلبات معلقة
-                    </td>
-                    <td style="text-align:center;">
-                        <div style="font-size:0.8rem; color:#64748b;">عهدة كاش: ${totalCash} ج</div>
-                        <div style="font-weight:bold; color:#d97706; font-size:1.1rem;">صافي للمطبخ: ${netToKitchen} ج</div>
+                        <div style="color:#64748b; font-size:0.85rem;">إجمالي للمطبخ: ${totalKitchenShare} ج</div>
+                        <div style="font-weight:800; color:#ef4444; font-size:1.1rem; margin-top:5px;">
+                            المتبقي عليه: ${remainingBalance > 0 ? remainingBalance : 0} ج
+                        </div>
                     </td>
                     <td style="display:flex; gap:5px; justify-content:center;">
-                        <button class="btn-primary" style="background:#10b981; border:none;" 
-                                onclick="settleDriverAccount(${driver.id}, ${netToKitchen})">
-                            استلام النقدية وتصفير 💰
+                        <button class="btn-primary" style="background:#10b981; border:none; padding:8px;" 
+                                onclick="receivePartialPayment(${driver.id}, ${remainingBalance})">
+                            استلام كاش 💰
                         </button>
-                        <button class="btn-status" style="background:#3b82f6; color:white;" onclick="openHistoryModal(${driver.id}, '${driver.full_name}')">السجل</button>
+                        <button class="btn-status" style="background:#3b82f6; color:white; padding:8px; border:none;" 
+                                onclick="openHistoryModal(${driver.id}, '${driver.full_name}')">
+                            السجل 📅
+                        </button>
                     </td>
                 </tr>
             `;
         });
-
     } catch (err) {
         console.error("خطأ:", err);
     }
 }
 
-// 2. وظيفة "تصفير العداد" (التسوية المالية)
-window.settleDriverAccount = async (driverId, netAmount) => {
-    if (netAmount <= 0) return alert("المندوب ليس لديه مبالغ مستحقة حالياً.");
+// الدالة السحرية للاستلام الجزئي والتسوية
+window.receivePartialPayment = async (driverId, currentBalance) => {
+    if (currentBalance <= 0) return alert("العداد مصفر، لا توجد مبالغ مستحقة على هذا المندوب! ✅");
     
-    if (!confirm(`هل استلمت مبلغ ${netAmount} ج.م من المندوب؟ سيتم تصفير عهدته الآن.`)) return;
+    const amountStr = prompt(`المبلغ المتبقي على المندوب: ${currentBalance} ج.م\nأدخلي المبلغ الذي تم استلامه منه الآن:`);
+    if (!amountStr) return;
+    
+    let payment = parseFloat(amountStr);
+    if (isNaN(payment) || payment <= 0) return alert("عذراً، يرجى إدخال مبلغ صحيح.");
+    if (payment > currentBalance) return alert("المبلغ المدخل أكبر من المديونية!");
 
     try {
-        // تحديث كل الطلبات المسلمة والتابعة لهذا المندوب لتصبح "settled_with_admin = true"
-        const { error } = await window.supabaseClient
+        const { data: unsettledOrders, error } = await window.supabaseClient
             .from('orders')
-            .update({ settled_with_admin: true })
+            .select('*')
             .eq('status', 'DELIVERED')
-            .eq('settled_with_admin', false)
-            .eq('driver_id', driverId);
+            .eq('driver_id', driverId)
+            .order('created_at', { ascending: true }); // ترتيب من الأقدم للأحدث
 
         if (error) throw error;
 
-        alert("تم استلام النقدية وتصفير عداد المندوب بنجاح ✅");
-        loadDriversData(); // تحديث فوري للشاشة
+        for (let order of unsettledOrders) {
+            if (payment <= 0) break; // لو المبلغ اللي ادتيهوله خلص، نوقف
+            
+            const comm = order.delivery_commission || 30;
+            const kitchenNet = order.total_amount - comm;
+            const alreadyPaid = order.admin_received_amount || 0;
+            const remainingForOrder = kitchenNet - alreadyPaid;
+
+            if (remainingForOrder > 0) {
+                // نخصم من المبلغ اللي في إيدينا على قد الأوردر ده
+                let amountToApply = Math.min(payment, remainingForOrder);
+                payment -= amountToApply;
+
+                await window.supabaseClient.from('orders')
+                    .update({ admin_received_amount: alreadyPaid + amountToApply })
+                    .eq('id', order.id);
+            }
+        }
+        
+        alert("تم تسجيل المبلغ بنجاح وخصمه من عهدة المندوب! 💸");
+        loadDriversData(); // تحديث الشاشة
 
     } catch (err) {
         alert("حدث خطأ أثناء التسوية.");
+        console.error(err);
     }
 };
 
-// ... (باقي دوال النوافذ المنبثقة من كودك الأصلي) ...
-function setupForms() { /* الأكواد الخاصة بالنماذج في ملفك الأصلي */ }
+// ==========================================
+// دوال سجل المندوب (النافذة المنبثقة)
+// ==========================================
+let currentHistoryDriverId = null;
+
+window.openHistoryModal = (driverId, driverName) => {
+    currentHistoryDriverId = driverId;
+    document.getElementById('historyDriverName').innerText = `سجل طلبات: ${driverName}`;
+    
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('history-start-date').value = today;
+    document.getElementById('history-end-date').value = today;
+    
+    document.getElementById('historyModal').hidden = false;
+    document.getElementById('historyModal').style.display = 'flex';
+    filterDriverHistory();
+};
+
+window.closeHistoryModal = () => {
+    document.getElementById('historyModal').hidden = true;
+    document.getElementById('historyModal').style.display = 'none';
+};
+
+window.filterDriverHistory = async () => {
+    const start = document.getElementById('history-start-date').value;
+    const end = document.getElementById('history-end-date').value;
+    if (!start || !end) return;
+
+    const startDate = new Date(start); startDate.setHours(0,0,0,0);
+    const endDate = new Date(end); endDate.setHours(23,59,59,999);
+
+    try {
+        const { data: orders, error } = await window.supabaseClient
+            .from('orders')
+            .select('*')
+            .eq('driver_id', currentHistoryDriverId)
+            .eq('status', 'DELIVERED')
+            .gte('created_at', startDate.toISOString())
+            .lte('created_at', endDate.toISOString())
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const tbody = document.getElementById('history-table-body');
+        tbody.innerHTML = '';
+        let totalCommission = 0;
+
+        if (!orders || orders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">لا توجد طلبات في هذه الفترة 📭</td></tr>';
+        } else {
+            orders.forEach(order => {
+                const commission = order.delivery_commission || 30;
+                totalCommission += commission;
+                const time = new Date(order.created_at).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' });
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight:bold;">${order.order_code}</td>
+                        <td style="font-size:0.9rem; color:#475569;">${time}</td>
+                        <td>${order.total_amount} ج.م</td>
+                        <td style="color:#10b981; font-weight:bold;">+ ${commission} ج</td>
+                    </tr>
+                `;
+            });
+        }
+        document.getElementById('history-total-commission').innerText = `${totalCommission} ج.م`;
+
+    } catch (err) {
+        console.error("خطأ:", err);
+    }
+};
