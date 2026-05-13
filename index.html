@@ -6,7 +6,38 @@
     <title>مطبخ سارة للأكل البيتي | طعم البيوت الأصلي</title>
     <link rel="icon" type="image/png" href="logo-sara-kitchen.png">
     <link rel="stylesheet" href="css/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        .storefront-section { margin-top: -30px; position: relative; z-index: 10; padding-bottom: 40px; }
+        .quick-search-wrapper { background: white; padding: 5px 10px; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 30px; display: flex; border: 2px solid var(--primary); }
+        .quick-search-wrapper input { width: 100%; border: none; outline: none; padding: 12px 15px; font-size: 1rem; font-family: 'Cairo', sans-serif; border-radius: 50px; background: transparent; }
+        .storefront-block { margin-bottom: 35px; }
+        .block-title { font-size: 1.3rem; color: #1e293b; margin-bottom: 15px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
+        .block-title a { font-size: 0.9rem; color: var(--primary); text-decoration: none; font-weight: 700; }
+        
+        /* السحب الأفقي للموبايل */
+        .horizontal-scroll { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .horizontal-scroll::-webkit-scrollbar { height: 4px; }
+        .horizontal-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        /* كارت التصنيف الدائري */
+        .cat-mini-card { min-width: 85px; scroll-snap-align: start; text-align: center; text-decoration: none; color: #334155; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .cat-icon-wrapper { width: 75px; height: 75px; border-radius: 50%; background: #f8fafc; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; transition: 0.3s; padding: 2px;}
+        .cat-icon-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .cat-mini-card:hover .cat-icon-wrapper { border-color: var(--primary); box-shadow: 0 4px 10px rgba(217, 119, 6, 0.2); }
+        .cat-mini-card span { font-size: 0.9rem; font-weight: 700; }
+        
+        /* كارت الصنف السريع */
+        .product-mini-card { min-width: 170px; max-width: 170px; background: white; border-radius: 15px; border: 1px solid #e2e8f0; overflow: hidden; scroll-snap-align: start; box-shadow: 0 4px 6px rgba(0,0,0,0.03); display: flex; flex-direction: column; }
+        .product-mini-card img { width: 100%; height: 130px; object-fit: cover; }
+        .pmc-body { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .pmc-title { font-size: 1rem; font-weight: 800; color: #1e293b; margin: 0 0 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pmc-price { color: var(--primary); font-weight: 800; font-size: 1.1rem; margin-bottom: 12px; }
+        .btn-add-mini { width: 100%; background: #10b981; color: white; border: none; padding: 8px; border-radius: 8px; font-family: inherit; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 0.9rem; }
+        .btn-add-mini:hover { background: #059669; }
+        .btn-menu-mini { background: #f59e0b; }
+    </style>
 </head>
 <body>
 
@@ -21,8 +52,7 @@
                     <li><a href="index.html" class="active">الرئيسية</a></li>
                     <li><a href="menu.html">القائمة</a></li>
                     <li><a href="track.html">تتبع طلبك</a></li>
-                    <li><a href="my-orders.html">طلباتي</a></li>
-                    <li><a href="cart.html" class="cart-link">السلة 🛒</a></li>
+                    <li><a href="cart.html" class="cart-link">السلة <span id="cart-count">0</span> 🛒</a></li>
                 </ul>
             </nav>
         </div>
@@ -33,49 +63,34 @@
         <div class="container hero-content">
             <h2>طعم البيوت.. بأيادي مصرية مخلصة</h2>
             <p>نقدم لكم أشهى المأكولات المنزلية الطازجة، تُحضر يومياً بكل حب ونظافة لتصلكم أينما كنتم.</p>
-            <div class="hero-btns">
-                <a href="menu.html" class="btn btn-primary">تصفح المنيو الآن</a>
-                <a href="track.html" class="btn btn-outline">تتبع حالة طلبك</a>
-            </div>
         </div>
     </section>
 
-    <section class="features">
-        <div class="container grid-3">
-            <div class="feature-card">
-                <div class="feature-icon">🥗</div>
-                <h3>نظافة ومذاق</h3>
-                <p>مكونات طازجة مختارة بعناية، وطبخ بيتي يذكرك بلمة العيلة.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🚀</div>
-                <h3>توصيل سريع</h3>
-                <p>نحرص على وصول طلبك ساخناً وفي الموعد المحدد تماماً.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">⭐</div>
-                <h3>نظام الولاء</h3>
-                <p>اجمع النقاط مع كل طلب واستبدلها بوجبات مجانية وخصومات.</p>
-            </div>
+    <section class="storefront-section container">
+        
+        <div class="quick-search-wrapper">
+            <input type="text" id="quick-search" placeholder="🔍 بتدور على إيه؟ (مثال: محشي، فراخ)..." onkeyup="handleQuickSearch(event)">
         </div>
-    </section>
 
-    <section class="how-it-works container">
-        <h2 class="section-title">كيفية الطلب</h2>
-        <div class="steps-grid">
-            <div class="step">
-                <span class="step-num">1</span>
-                <p>اختر وجباتك المفضلة من القائمة</p>
+        <div class="storefront-block">
+            <div class="block-title">
+                <span>ماذا تشتهي اليوم؟</span>
+                <a href="menu.html">المنيو كامل ></a>
             </div>
-            <div class="step">
-                <span class="step-num">2</span>
-                <p>أضفها للسلة وأكد تفاصيل التوصيل</p>
-            </div>
-            <div class="step">
-                <span class="step-num">3</span>
-                <p>تابع حالة طلبك حتى وصوله لباب بيتك</p>
+            <div class="horizontal-scroll" id="categories-carousel">
+                <p style="color:#94a3b8; font-size:0.9rem;">جاري التحميل...</p>
             </div>
         </div>
+
+        <div class="storefront-block">
+            <div class="block-title">
+                <span>جاهز للتوصيل فوراً ⚡</span>
+            </div>
+            <div class="horizontal-scroll" id="instant-items-carousel">
+                <p style="color:#94a3b8; font-size:0.9rem;">جاري التحميل...</p>
+            </div>
+        </div>
+
     </section>
 
     <footer class="main-footer">
@@ -86,10 +101,10 @@
             </div>
             <div class="footer-contact">
                 <p>للتواصل: <span id="contact-phone">96550534441</span></p>
-                <p>مواعيد العمل: 10 ص - 10 م</p>
+               
             </div>
             <div class="footer-admin">
-                <a href="login.html">تسجيل الدخول للاستفادة من الخصومات </a>
+                <a href="login.html">تسجيل الدخول / لوحة التحكم</a>
             </div>
         </div>
         <div class="copy-right">
@@ -97,8 +112,8 @@
         </div>
     </footer>
 
-    <<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
-</body>
+    <script src="js/index.js"></script> </body>
 </html>
