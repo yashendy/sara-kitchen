@@ -33,8 +33,9 @@ async function refreshDriverData() {
         let myEarnings = 0;    // إجمالي العمولات
         
         // تصفية الطلبات: (المسلمة اليوم للحساب) و (التي معه حالياً للتوصيل)
-        const deliveredOrders = orders.filter(o => o.status === 'DELIVERED');
-        const activeOrders = orders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING' || o.status === 'OUT_FOR_DELIVERY');
+        // هنفلتر الطلبات المسلمة اللي "لسه متعملهاش تسوية" مع الأدمن
+const deliveredOrders = orders.filter(o => o.status === 'DELIVERED' && o.settled_with_admin === false);
+const activeOrders = orders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING' || o.status === 'OUT_FOR_DELIVERY');
 
         deliveredOrders.forEach(o => {
             cashInHand += (o.total_amount + (o.delivery_commission || 0));
