@@ -41,9 +41,10 @@ async function refreshDriverData(userId) {
 
         deliveredOrders.forEach(o => {
             const comm = o.delivery_commission || 30;
-            totalCashCollected += (o.total_amount + comm);
+            // التصحيح: مش هنجمع العمولة لأنها مدمجة في التوتال أصلاً
+            totalCashCollected += o.total_amount; 
             myEarnings += comm;
-            alreadyPaidToAdmin += (o.admin_received_amount || 0); // الفلوس اللي وردها
+            alreadyPaidToAdmin += (o.admin_received_amount || 0); 
         });
 
         // اللي في جيبه = اللي حصله - اللي ورده
