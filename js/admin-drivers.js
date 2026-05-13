@@ -33,32 +33,41 @@ async function loadDriversData() {
             let totalCashInHand = 0;
             let totalCommission = 0;
             let alreadyPaidToAdmin = 0;
+            let unsettledOrdersCount = 0; // 👈 عداد الطلبات اللي لسه متوردتش بالكامل
             
             driverOrders.forEach(o => {
                 const comm = o.delivery_commission || 30;
-                totalCashInHand += (o.total_amount + comm);
+                // التصحيح المحاسبي: الفاتورة شاملة التوصيل، فمش هنجمع العمولة مرتين
+                totalCashInHand += o.total_amount; 
                 totalCommission += comm;
                 alreadyPaidToAdmin += (o.admin_received_amount || 0);
+
+                // لو الأوردر ده لسه المطبخ مخدش حقه الكامل فيه، نعده
+                const kitchenShareForThisOrder = o.total_amount - comm;
+                if ((o.admin_received_amount || 0) < kitchenShareForThisOrder) {
+                    unsettledOrdersCount++;
+                }
             });
 
-            // صافي المطبخ = (إجمالي الفواتير - العمولات) - اللي اتورد قبل كده
+            // صافي المطبخ = (إجمالي الفواتير - العمولات)
             const totalKitchenShare = totalCashInHand - totalCommission;
+            // المتبقي = حق المطبخ - اللي اتورد قبل كده
             const remainingBalance = totalKitchenShare - alreadyPaidToAdmin;
 
             listBody.innerHTML += `
                 <tr>
                     <td><strong>${driver.full_name}</strong></td>
                     <td>${driver.phone}</td>
-                    <td style="text-align:center; font-weight:bold; color:#3b82f6;">${driverOrders.length} طلبات</td>
+                    <td style="text-align:center; font-weight:bold; color:#3b82f6;">${unsettledOrdersCount} طلبات</td>
                     <td style="text-align:center;">
                         <div style="color:#64748b; font-size:0.85rem;">إجمالي للمطبخ: ${totalKitchenShare} ج</div>
-                        <div style="font-weight:800; color:#ef4444; font-size:1.1rem; margin-top:5px;">
-                            المتبقي عليه: ${remainingBalance > 0 ? remainingBalance : 0} ج
+                        <div style="font-weight:800; color:${remainingBalance > 0 ? '#ef4444' : '#10b981'}; font-size:1.1rem; margin-top:5px;">
+                            ${remainingBalance > 0 ? 'المتبقي عليه: ' + remainingBalance + ' ج' : 'خالص ✅'}
                         </div>
                     </td>
                     <td style="display:flex; gap:5px; justify-content:center;">
-                        <button class="btn-primary" style="background:#10b981; border:none; padding:8px;" 
-                                onclick="receivePartialPayment(${driver.id}, ${remainingBalance})">
+                        <button class="btn-primary" style="background:${remainingBalance > 0 ? '#10b981' : '#cbd5e1'}; border:none; padding:8px;" 
+                                onclick="receivePartialPayment(${driver.id}, ${remainingBalance})" ${remainingBalance <= 0 ? 'disabled' : ''}>
                             استلام كاش 💰
                         </button>
                         <button class="btn-status" style="background:#3b82f6; color:white; padding:8px; border:none;" 
@@ -74,7 +83,6 @@ async function loadDriversData() {
     }
 }
 
-// الدالة السحرية للاستلام الجزئي والتسوية
 window.receivePartialPayment = async (driverId, currentBalance) => {
     if (currentBalance <= 0) return alert("العداد مصفر، لا توجد مبالغ مستحقة على هذا المندوب! ✅");
     
@@ -91,12 +99,12 @@ window.receivePartialPayment = async (driverId, currentBalance) => {
             .select('*')
             .eq('status', 'DELIVERED')
             .eq('driver_id', driverId)
-            .order('created_at', { ascending: true }); // ترتيب من الأقدم للأحدث
+            .order('created_at', { ascending: true }); 
 
         if (error) throw error;
 
         for (let order of unsettledOrders) {
-            if (payment <= 0) break; // لو المبلغ اللي ادتيهوله خلص، نوقف
+            if (payment <= 0) break; 
             
             const comm = order.delivery_commission || 30;
             const kitchenNet = order.total_amount - comm;
@@ -104,7 +112,6 @@ window.receivePartialPayment = async (driverId, currentBalance) => {
             const remainingForOrder = kitchenNet - alreadyPaid;
 
             if (remainingForOrder > 0) {
-                // نخصم من المبلغ اللي في إيدينا على قد الأوردر ده
                 let amountToApply = Math.min(payment, remainingForOrder);
                 payment -= amountToApply;
 
@@ -115,7 +122,7 @@ window.receivePartialPayment = async (driverId, currentBalance) => {
         }
         
         alert("تم تسجيل المبلغ بنجاح وخصمه من عهدة المندوب! 💸");
-        loadDriversData(); // تحديث الشاشة
+        loadDriversData(); 
 
     } catch (err) {
         alert("حدث خطأ أثناء التسوية.");
@@ -123,9 +130,6 @@ window.receivePartialPayment = async (driverId, currentBalance) => {
     }
 };
 
-// ==========================================
-// دوال سجل المندوب (النافذة المنبثقة)
-// ==========================================
 let currentHistoryDriverId = null;
 
 window.openHistoryModal = (driverId, driverName) => {
