@@ -45,7 +45,7 @@ window.loadDashboardStats = async () => {
         let netInSafe = 0;         
         let pendingOutside = 0;    
 
-        orders.forEach(order => {
+      orders.forEach(order => {
             const customerPaid = order.total_amount; 
             const driverCommission = order.delivery_commission || 0; 
             const kitchenShare = customerPaid - driverCommission; 
@@ -53,10 +53,14 @@ window.loadDashboardStats = async () => {
             totalKitchenSales += kitchenShare;
             totalCommissions += driverCommission;
 
-            if (order.settled_with_admin === true) {
-                netInSafe += kitchenShare; 
+            // لو الأوردر ده طالع من غير مندوب (استلام من المطبخ)، يبقى فلوسه دخلت الخزنة فوراً
+            if (!order.driver_id) {
+                netInSafe += kitchenShare;
             } else {
-                pendingOutside += kitchenShare;
+                // لو ليه مندوب، نقرأ الفلوس اللي إحنا استلمناها منه بس
+                const receivedFromDriver = order.admin_received_amount || 0;
+                netInSafe += receivedFromDriver; 
+                pendingOutside += (kitchenShare - receivedFromDriver);
             }
         });
 
