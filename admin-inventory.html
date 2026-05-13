@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المخزن والمصروفات | مطبخ سارة</title>
+    <link rel="icon" type="image/png" href="logo-sara-kitchen.png">
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        .inventory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+        @media(max-width: 768px) { .inventory-grid { grid-template-columns: 1fr; } }
+        
+        .card-panel { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        .card-header h3 { margin: 0; color: #1e293b; }
+        
+        .stats-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .s-card { background: white; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
+        .s-card h4 { margin: 0 0 5px 0; font-size: 0.9rem; color: #64748b; }
+        .s-card.expense { border-bottom: 4px solid #ef4444; }
+        .s-card.debt { border-bottom: 4px solid #f59e0b; }
+        .s-card.shortage { border-bottom: 4px solid #3b82f6; }
+        
+        .badge-danger { background: #fee2e2; color: #ef4444; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
+        .badge-safe { background: #dcfce3; color: #10b981; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
+    </style>
+</head>
+<body class="admin-body">
+
+    <header class="navbar">
+        <div class="container">
+            <div class="logo">🍲 مطبخ سارة</div>
+            <nav class="nav-links">
+                <a href="index.html">الرئيسية</a>
+                <a href="admin-dashboard.html">الداشبورد</a>
+                <a href="admin-orders.html">الطلبات</a>
+                <a href="admin-items.html">الأصناف</a>
+                <a href="admin-drivers.html">المندوبين</a>
+                <a href="admin-inventory.html" class="active">المخزن والمصروفات</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container" style="margin-top: 30px;">
+        
+        <div class="stats-cards">
+            <div class="s-card expense">
+                <h4>إجمالي المصروفات (كاش)</h4>
+                <div id="total-expenses" style="font-size:1.5rem; font-weight:bold; color:#ef4444;">0 ج</div>
+            </div>
+            <div class="s-card debt">
+                <h4>ديون علينا (للموردين)</h4>
+                <div id="total-debts" style="font-size:1.5rem; font-weight:bold; color:#f59e0b;">0 ج</div>
+            </div>
+            <div class="s-card shortage">
+                <h4>نواقص المخزن (مطلوبة)</h4>
+                <div id="total-shortages" style="font-size:1.5rem; font-weight:bold; color:#3b82f6;">0 صنف</div>
+            </div>
+        </div>
+
+        <div class="inventory-grid">
+            <div class="card-panel">
+                <div class="card-header">
+                    <h3>📦 خامات المخزن</h3>
+                    <button class="btn-primary" onclick="openInventoryModal()">إضافة صنف +</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>الصنف</th>
+                            <th>الرصيد</th>
+                            <th>الوحدة</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-list">
+                        </tbody>
+                </table>
+            </div>
+
+            <div class="card-panel">
+                <div class="card-header">
+                    <h3>💸 المشتريات والمنصرف</h3>
+                    <button class="btn-primary" style="background:#ef4444;" onclick="openPurchaseModal()">تسجيل مصروف +</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>البيان / المورد</th>
+                            <th>الإجمالي</th>
+                            <th>المدفوع</th>
+                            <th>الباقي (دين)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchases-list">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="inventoryModal" class="admin-modal" hidden>
+        <div class="admin-modal-content">
+            <header class="admin-modal-header">
+                <h3>إضافة خامات للمخزن</h3>
+                <button onclick="document.getElementById('inventoryModal').hidden = true" class="admin-modal-close">×</button>
+            </header>
+            <form id="inventory-form" class="admin-modal-body">
+                <input type="text" id="inv-name" class="form-input" placeholder="اسم الصنف (مثال: أرز بسمتي)" required style="margin-bottom:10px; width:100%; padding:10px;">
+                <input type="text" id="inv-unit" class="form-input" placeholder="الوحدة (مثال: كجم)" required style="margin-bottom:10px; width:100%; padding:10px;">
+                <input type="number" id="inv-stock" class="form-input" placeholder="الرصيد الحالي" required style="margin-bottom:10px; width:100%; padding:10px;">
+                <input type="number" id="inv-min" class="form-input" placeholder="الحد الأدنى (للتنبيه)" required style="margin-bottom:10px; width:100%; padding:10px;">
+                <button type="submit" class="btn-primary" style="width:100%; padding:10px;">حفظ في المخزن</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="purchaseModal" class="admin-modal" hidden>
+        <div class="admin-modal-content">
+            <header class="admin-modal-header">
+                <h3>تسجيل فاتورة مشتريات</h3>
+                <button onclick="document.getElementById('purchaseModal').hidden = true" class="admin-modal-close">×</button>
+            </header>
+            <form id="purchase-form" class="admin-modal-body">
+                <input type="text" id="pur-desc" class="form-input" placeholder="البيان (مثال: شراء لحوم ودواجن)" required style="margin-bottom:10px; width:100%; padding:10px;">
+                <input type="text" id="pur-supplier" class="form-input" placeholder="اسم المورد / المحل" style="margin-bottom:10px; width:100%; padding:10px;">
+                <input type="number" id="pur-total" class="form-input" placeholder="إجمالي الفاتورة" required style="margin-bottom:10px; width:100%; padding:10px;">
+                <input type="number" id="pur-paid" class="form-input" placeholder="المدفوع كاش" required style="margin-bottom:10px; width:100%; padding:10px;">
+                <button type="submit" class="btn-primary" style="width:100%; padding:10px; background:#ef4444; border:none;">تسجيل المصروف</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/admin-inventory.js"></script>
+</body>
+</html>
