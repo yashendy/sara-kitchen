@@ -4,6 +4,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadStorefrontData();
 });
 
+// دالة سحرية لفصل الإيموجي عن النص
+function parseCategoryName(fullName) {
+    // كود بيبحث عن أي إيموجي في النص
+    const emojiRegex = /\p{Emoji_Presentation}/gu;
+    const match = fullName.match(emojiRegex);
+    
+    let emoji = '🍽️'; // الإيموجي الافتراضي لو نضيتي تكتبي إيموجي
+    let text = fullName;
+
+    if (match) {
+        emoji = match[0]; // بياخد أول إيموجي يلاقيه
+        text = fullName.replace(emoji, '').trim(); // بيمسح الإيموجي من الاسم عشان يكتبه تحت صافي
+    }
+    return { emoji, text };
+}
+
 async function loadStorefrontData() {
     try {
         // 1. جلب التصنيفات
@@ -16,31 +32,35 @@ async function loadStorefrontData() {
             // إضافة زر "الكل"
             catContainer.innerHTML += `
                 <a href="menu.html" class="cat-mini-card">
-                    <div class="cat-icon-wrapper" style="background: var(--primary); color: white; font-size: 2rem;">🍽️</div>
+                    <div class="cat-icon-wrapper" style="background: var(--primary); color: white; font-size: 2.2rem; border: none;">
+                        🍽️
+                    </div>
                     <span>الكل</span>
                 </a>
             `;
             
             categories.forEach(cat => {
-                // بنستخدم لوجو المطبخ كصورة افتراضية للتصنيف (لحد ما تضيفي صور للتصنيفات لاحقاً)
+                // استخدام الدالة السحرية لفصل الإيموجي عن النص
+                const parsed = parseCategoryName(cat.name);
+                
                 catContainer.innerHTML += `
                     <a href="menu.html?cat=${cat.id}" class="cat-mini-card">
-                        <div class="cat-icon-wrapper">
-                            <img src="logo-sara-kitchen.png" alt="${cat.name}"> 
+                        <div class="cat-icon-wrapper" style="font-size: 2.2rem; background: #f8fafc;">
+                            ${parsed.emoji}
                         </div>
-                        <span>${cat.name}</span>
+                        <span>${parsed.text}</span>
                     </a>
                 `;
             });
         }
 
-        // 2. جلب الأصناف الفورية (متاحة وجاهزة فوراً)
+        // 2. جلب الأصناف الفورية
         const { data: instantItems, error: itemsError } = await window.supabaseClient
             .from('products')
             .select('*')
             .eq('is_instant', true)
             .eq('is_available', true)
-            .limit(10); // هنعرض أول 10 بس عشان السرعة
+            .limit(10); 
 
         if (!itemsError && instantItems) {
             const itemsContainer = document.getElementById('instant-items-carousel');
@@ -54,7 +74,6 @@ async function loadStorefrontData() {
                     let hasVariants = item.variants && item.variants.length > 0;
                     let priceDisplay = hasVariants ? '<span style="font-size:0.8rem;">تبدأ من</span> ' + (item.variants[0].price) + ' ج' : `${itemPrice} ج`;
 
-                    // لو الصنف ليه أحجام، الزرار هيوديه للمنيو يختار.. لو ملوش أحجام هيضيفه للسلة فوراً
                     let btnHtml = hasVariants 
                         ? `<button class="btn-add-mini btn-menu-mini" onclick="window.location.href='menu.html?highlight=${item.id}'">اختر الحجم ⚙️</button>`
                         : `<button class="btn-add-mini" onclick="window.addToCart(${item.id}, '${item.name}', ${itemPrice}, '${item.image_url}')">أضف للسلة 🛒</button>`;
@@ -78,7 +97,7 @@ async function loadStorefrontData() {
     }
 }
 
-// 3. البحث السريع (بينقله للمنيو بالكلمة اللي بحث عنها)
+// 3. البحث السريع
 window.handleQuickSearch = (e) => {
     if (e.key === 'Enter') {
         const query = e.target.value.trim();
