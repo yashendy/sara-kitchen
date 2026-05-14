@@ -15,16 +15,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (searchInput) searchInput.addEventListener('input', applyAdminFilters);
     if (categoryFilter) categoryFilter.addEventListener('change', applyAdminFilters);
 
-    // ربط أزرار النوافذ المنبثقة
+    // ربط أزرار النوافذ المنبثقة للأصناف
     document.getElementById('btn-add-item').addEventListener('click', openAddItemModal);
     document.getElementById('closeItemModalX').addEventListener('click', closeItemModal);
     document.getElementById('cancelItemModalBtn').addEventListener('click', closeItemModal);
     document.getElementById('saveItemBtn').addEventListener('click', saveItem);
 
+    // ربط أزرار النوافذ المنبثقة للتصنيفات
     document.getElementById('btn-manage-categories').addEventListener('click', openCategoryModal);
     document.getElementById('closeCategoryModalX').addEventListener('click', closeCategoryModal);
     document.getElementById('cancelCategoryModalBtn').addEventListener('click', closeCategoryModal);
     document.getElementById('saveCategoryBtn').addEventListener('click', saveCategory);
+    
+    // 👈 السطر الجديد لربط زرار (تصنيف جديد)
+    document.getElementById('newCategoryBtn').addEventListener('click', resetCategoryForm);
 
     // ربط رفع الصورة
     const imageBtn = document.getElementById('itemImageBtn');
@@ -36,8 +40,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // ==========================================
-// 1. إدارة التصنيفات
+// 1. إدارة التصنيفات (مع دعم التعديل والإيموجي)
 // ==========================================
+let currentEditingCategoryId = null; // متغير لتمييز هل نحن نضيف أم نعدل
+
 async function loadCategories() {
     try {
         const { data, error } = await window.supabaseClient.from('categories').select('*').order('name');
@@ -60,6 +66,7 @@ async function loadCategories() {
 }
 
 function openCategoryModal() {
+    resetCategoryForm(); // تصفير الفورم قبل الفتح
     document.getElementById('categoryModal').hidden = false;
     renderCategoryList();
 }
@@ -68,29 +75,78 @@ function closeCategoryModal() {
     document.getElementById('categoryModal').hidden = true;
 }
 
+// رسم القائمة مع زر التعديل الجديد
 function renderCategoryList() {
     const container = document.getElementById('categoryListContainer');
     container.innerHTML = allCategories.map(c => `
         <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee; background:#f8fafc; margin-bottom:5px; border-radius:5px;">
-            <strong style="color:#334155;">${c.name}</strong>
-            <button onclick="deleteCategory(${c.id})" style="color:white; background:#ef4444; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">حذف 🗑️</button>
+            <strong style="color:#334155; font-size: 1.1rem;">${c.name}</strong>
+            <div style="display: flex; gap: 5px;">
+                <button onclick="editCategory(${c.id}, '${c.name.replace(/'/g, "\\'")}')" style="color:white; background:#f59e0b; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">تعديل ✏️</button>
+                <button onclick="deleteCategory(${c.id})" style="color:white; background:#ef4444; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">حذف 🗑️</button>
+            </div>
         </div>
     `).join('');
 }
 
+// دالة تصفير الفورم
+window.resetCategoryForm = () => {
+    currentEditingCategoryId = null;
+    document.getElementById('categoryName').value = '';
+    document.getElementById('saveCategoryBtn').innerText = "حفظ";
+    const msg = document.getElementById('categoryFormMessage');
+    if(msg) msg.innerText = "";
+};
+
+// دالة تجهيز التصنيف للتعديل عند الضغط على زر "تعديل"
+window.editCategory = (id, name) => {
+    currentEditingCategoryId = id;
+    document.getElementById('categoryName').value = name;
+    document.getElementById('saveCategoryBtn').innerText = "تحديث التصنيف";
+    
+    const msg = document.getElementById('categoryFormMessage');
+    if(msg) {
+        msg.innerText = "جاري تعديل هذا التصنيف...";
+        msg.style.color = "#f59e0b";
+    }
+};
+
+// دالة الحفظ (تفرق بين الإضافة الجديدة والتعديل)
 async function saveCategory() {
     const name = document.getElementById('categoryName').value.trim();
     if(!name) return alert("اكتبي اسم التصنيف الأول");
+    
+    const msg = document.getElementById('categoryFormMessage');
+    
     try {
-        await window.supabaseClient.from('categories').insert([{name}]);
-        document.getElementById('categoryName').value = '';
+        if (currentEditingCategoryId) {
+            // تحديث تصنيف موجود
+            const { error } = await window.supabaseClient.from('categories').update({ name }).eq('id', currentEditingCategoryId);
+            if (error) throw error;
+            if(msg) { msg.innerText = "تم التحديث بنجاح ✅"; msg.style.color = "green"; }
+        } else {
+            // إضافة تصنيف جديد
+            const { error } = await window.supabaseClient.from('categories').insert([{name}]);
+            if (error) throw error;
+            if(msg) { msg.innerText = "تمت الإضافة بنجاح ✅"; msg.style.color = "green"; }
+        }
+        
         await loadCategories();
         renderCategoryList();
-    } catch(err) { console.error(err); }
+        
+        // إعادة الفورم لوضعه الطبيعي بعد ثانيتين
+        setTimeout(() => {
+            resetCategoryForm();
+        }, 2000);
+
+    } catch(err) { 
+        console.error(err); 
+        if(msg) { msg.innerText = "حدث خطأ أثناء الحفظ!"; msg.style.color = "red"; }
+    }
 }
 
 window.deleteCategory = async (id) => {
-    if(!confirm("هل متأكدة من حذف التصنيف؟")) return;
+    if(!confirm("هل متأكدة من حذف التصنيف؟ (قد يؤثر على الأصناف المرتبطة به)")) return;
     await window.supabaseClient.from('categories').delete().eq('id', id);
     await loadCategories();
     renderCategoryList();
