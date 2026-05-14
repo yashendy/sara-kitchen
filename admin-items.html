@@ -166,7 +166,7 @@
       </div>
     </div>
 
-    <div class="admin-modal" id="categoryModal" hidden>
+   <div class="admin-modal" id="categoryModal" hidden>
       <div class="admin-modal-dialog" style="max-width: 500px;">
         <header class="admin-modal-header">
           <h3 class="admin-modal-title" id="categoryModalTitle">إدارة التصنيفات</h3>
@@ -175,10 +175,13 @@
         <div class="admin-modal-body">
           <form id="categoryForm" class="admin-form">
             <div class="form-row">
-                <label for="categoryName">اسم التصنيف</label>
-                <input type="text" id="categoryName" required placeholder="مثال: وجبات رئيسية" />
+                <label for="categoryName">اسم التصنيف (مع إيموجي 🫑)</label>
+                <input type="text" id="categoryName" required placeholder="مثال: وجبات رئيسية 🍲" style="font-size: 1.1rem; padding: 10px;" />
+                <p style="font-size:0.8rem; color:#64748b; margin-top:5px;">
+                    💡 <strong>لإضافة إيموجي:</strong> من الكمبيوتر اضغطي زر الويندوز مع النقطة <code>(Win + .)</code>، ومن الموبايل استخدمي كيبورد الإيموجي العادي.
+                </p>
             </div>
-            <div class="form-row"><p id="categoryFormMessage" style="color: green; text-align: center;"></p></div>
+            <div class="form-row"><p id="categoryFormMessage" style="font-weight: bold; text-align: center; margin-top: 10px;"></p></div>
           </form>
           <section class="order-details-section" style="margin-top: 1rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
             <h4 style="margin-bottom: 10px; color: #475569;">التصنيفات الحالية</h4>
@@ -187,7 +190,7 @@
         </div>
         <footer class="admin-modal-footer">
           <button class="btn-secondary" id="cancelCategoryModalBtn" type="button">إغلاق</button>
-          <button class="btn-secondary" id="newCategoryBtn" type="button">تصنيف جديد ➕</button>
+          <button class="btn-secondary" id="newCategoryBtn" type="button" onclick="resetCategoryForm()">تصنيف جديد ➕</button>
           <button class="btn-primary" id="saveCategoryBtn" type="button">حفظ</button>
         </footer>
       </div>
