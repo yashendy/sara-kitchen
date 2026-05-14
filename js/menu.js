@@ -177,8 +177,17 @@ function filterProducts(query) {
 }
 
 function filterByCategory(catId, btn) {
+    // 1. إزالة التحديد من كل الزراير
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const filtered = (catId === 'all') ? allProducts : allProducts.filter(p => p.category_id === catId);
+    
+    // 2. تفعيل الزرار اللي تم الضغط عليه (لو تم تمريره صح)
+    if (btn) btn.classList.add('active');
+
+    // 3. الفلترة الذكية (تقبل all أو ALL أو لو القيمة فاضية)
+    const isAll = (String(catId).toLowerCase() === 'all' || catId === '' || catId === null);
+    
+    const filtered = isAll ? allProducts : allProducts.filter(p => p.category_id == catId);
+    
+    // 4. عرض النتيجة
     displayProducts(filtered);
 }
